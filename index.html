@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI & ML Research Lab — Bangladesh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050a0f;
+    --bg2: #080f18;
+    --surface: #0d1926;
+    --surface2: #112233;
+    --accent: #00e5ff;
+    --accent2: #7b2fff;
+    --accent3: #ff6b35;
+    --text: #e8f4f8;
+    --text2: #8bafc4;
+    --text3: #4a7a96;
+    --border: rgba(0,229,255,0.12);
+    --glow: 0 0 40px rgba(0,229,255,0.15);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* ─── Custom Cursor ─── */
+  .cursor {
+    width: 12px; height: 12px;
+    background: var(--accent);
+    border-radius: 50%;
+    position: fixed; top: 0; left: 0;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s, width 0.3s, height 0.3s, background 0.3s;
+    mix-blend-mode: screen;
+  }
+  .cursor-ring {
+    width: 36px; height: 36px;
+    border: 1.5px solid rgba(0,229,255,0.5);
+    border-radius: 50%;
+    position: fixed; top: 0; left: 0;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: all 0.15s ease;
+  }
+  body:hover .cursor { opacity: 1; }
+
+  /* ─── Noise Overlay ─── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9990;
+    opacity: 0.4;
+  }
+
+  /* ─── Grid Lines ─── */
+  .grid-bg {
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed; top: 0; width: 100%;
+    z-index: 1000;
+    padding: 0 40px;
+    height: 70px;
+    display: flex; align-items: center; justify-content: space-between;
+    backdrop-filter: blur(20px);
+    background: rgba(5,10,15,0.7);
+    border-bottom: 1px solid var(--border);
+    transition: all 0.4s;
+  }
+  nav.scrolled {
+    height: 60px;
+    background: rgba(5,10,15,0.95);
+  }
+  .nav-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .nav-logo .dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.6); opacity: 0.5; }
+  }
+  .nav-links {
+    display: flex; gap: 32px; list-style: none;
+  }
+  .nav-links a {
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    font-family: 'Space Mono', monospace;
+    transition: color 0.3s;
+    position: relative;
+  }
+  .nav-links a::after {
+    content: '';
+    position: absolute; bottom: -4px; left: 0;
+    width: 0; height: 1px;
+    background: var(--accent);
+    transition: width 0.3s;
+  }
+  .nav-links a:hover { color: var(--accent); }
+  .nav-links a:hover::after { width: 100%; }
+
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px;
+  }
+  .hamburger span {
+    display: block;
+    width: 24px; height: 2px;
+    background: var(--accent);
+    transition: all 0.3s;
+  }
+
+  /* ─── HERO ─── */
+  #hero {
+    min-height: 100vh;
+    display: flex; align-items: center;
+    padding: 100px 60px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+  }
+  .hero-orb-1 {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,229,255,0.08) 0%, transparent 70%);
+    top: -100px; right: -100px;
+    animation: float1 8s ease-in-out infinite;
+  }
+  .hero-orb-2 {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(123,47,255,0.1) 0%, transparent 70%);
+    bottom: 0; left: 100px;
+    animation: float2 10s ease-in-out infinite;
+  }
+  @keyframes float1 {
+    0%,100% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(-30px, 20px) scale(1.05); }
+  }
+  @keyframes float2 {
+    0%,100% { transform: translate(0,0); }
+    50% { transform: translate(20px, -30px); }
+  }
+
+  .hero-content { position: relative; z-index: 2; max-width: 900px; }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--border);
+    background: rgba(0,229,255,0.05);
+    padding: 6px 16px;
+    border-radius: 100px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 32px;
+    animation: fadeUp 0.8s ease both;
+  }
+  .hero-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+
+  h1.hero-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2.8rem, 6vw, 5.5rem);
+    line-height: 1.05;
+    letter-spacing: -2px;
+    margin-bottom: 24px;
+    animation: fadeUp 0.8s 0.1s ease both;
+  }
+  .hero-title .line-accent { color: var(--accent); }
+  .hero-title .line-dim { color: var(--text3); }
+
+  .hero-sub {
+    font-size: 1.1rem;
+    color: var(--text2);
+    max-width: 560px;
+    line-height: 1.7;
+    margin-bottom: 48px;
+    font-weight: 300;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  .hero-cta {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 14px 32px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s;
+    letter-spacing: 0.5px;
+  }
+  .btn-primary:hover {
+    background: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(0,229,255,0.3);
+  }
+  .btn-outline {
+    background: transparent;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 13px 32px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s;
+  }
+  .btn-outline:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .hero-stats {
+    display: flex; gap: 48px; flex-wrap: wrap;
+    margin-top: 64px;
+    padding-top: 48px;
+    border-top: 1px solid var(--border);
+    animation: fadeUp 0.8s 0.4s ease both;
+  }
+  .stat-item { }
+  .stat-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+    display: block;
+  }
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* ─── SCROLL INDICATOR ─── */
+  .scroll-indicator {
+    position: absolute; bottom: 40px; left: 60px;
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    animation: fadeUp 1s 0.6s ease both;
+  }
+  .scroll-line {
+    width: 40px; height: 1px;
+    background: var(--text3);
+    position: relative;
+    overflow: hidden;
+  }
+  .scroll-line::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: var(--accent);
+    animation: scanLine 2s infinite;
+  }
+  @keyframes scanLine {
+    0% { left: -100%; }
+    100% { left: 100%; }
+  }
+
+  /* ─── SECTION BASE ─── */
+  section {
+    padding: 100px 60px;
+    position: relative;
+  }
+  .section-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2rem, 4vw, 3rem);
+    letter-spacing: -1px;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+  .section-sub {
+    color: var(--text2);
+    font-size: 1rem;
+    max-width: 520px;
+    line-height: 1.7;
+    font-weight: 300;
+    margin-bottom: 60px;
+  }
+
+  /* ─── ABOUT ─── */
+  #about { background: var(--bg2); }
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+  }
+  .about-visual {
+    position: relative;
+  }
+  .about-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .about-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), transparent);
+  }
+  .mission-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    margin-top: 20px;
+  }
+  .mission-card h4 {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+  .mission-card p {
+    font-size: 0.9rem;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+  .about-text p {
+    color: var(--text2);
+    line-height: 1.8;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+  }
+  .value-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 32px;
+  }
+  .value-list li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: var(--text2);
+  }
+  .value-list li::before {
+    content: '▸';
+    color: var(--accent);
+    font-size: 0.8rem;
+  }
+
+  /* ─── RESEARCH AREAS ─── */
+  #research {
+    background: var(--bg);
+  }
+  .research-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .research-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    cursor: pointer;
+  }
+  .research-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(0,229,255,0.05) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .research-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(0,229,255,0.3);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,229,255,0.1);
+  }
+  .research-card:hover::before { opacity: 1; }
+
+  .rc-icon {
+    width: 48px; height: 48px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    background: rgba(0,229,255,0.08);
+    border: 1px solid rgba(0,229,255,0.15);
+    transition: all 0.3s;
+  }
+  .research-card:hover .rc-icon {
+    background: rgba(0,229,255,0.15);
+    box-shadow: 0 0 20px rgba(0,229,255,0.2);
+  }
+  .rc-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+  .rc-desc {
+    font-size: 0.85rem;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+  .rc-tag {
+    display: inline-block;
+    margin-top: 20px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent);
+    background: rgba(0,229,255,0.08);
+    border: 1px solid rgba(0,229,255,0.15);
+    padding: 4px 10px;
+    border-radius: 100px;
+    letter-spacing: 1px;
+  }
+
+  /* ─── PEOPLE ─── */
+  #people { background: var(--bg2); }
+  .people-tabs {
+    display: flex; gap: 4px;
+    margin-bottom: 48px;
+    background: var(--surface);
+    padding: 4px;
+    border-radius: 8px;
+    width: fit-content;
+    border: 1px solid var(--border);
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: grid; }
+
+  .exec-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .advisor-grid { grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .member-grid { grid-template-columns: repeat(5, 1fr); gap: 16px; }
+
+  .person-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .person-card::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    transform: scaleX(0);
+    transition: transform 0.4s;
+  }
+  .person-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(0,229,255,0.2);
+  }
+  .person-card:hover::after { transform: scaleX(1); }
+
+  .person-avatar {
+    width: 70px; height: 70px;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.4rem;
+    color: #000;
+    position: relative;
+  }
+  .person-avatar::after {
+    content: '';
+    position: absolute; inset: -3px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(0,229,255,0.3);
+  }
+  .person-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+  .person-role {
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+  }
+  .person-dept {
+    font-size: 0.75rem;
+    color: var(--text3);
+    line-height: 1.4;
+  }
+
+  .advisor-card .person-card {
+    padding: 32px 24px;
+    text-align: left;
+  }
+  .advisor-card .person-avatar {
+    margin: 0 0 20px 0;
+    width: 80px; height: 80px;
+    font-size: 1.6rem;
+  }
+  .advisor-expertise {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-top: 16px;
+  }
+  .expertise-tag {
+    font-size: 0.65rem;
+    background: rgba(0,229,255,0.07);
+    border: 1px solid rgba(0,229,255,0.15);
+    color: var(--accent);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.5px;
+  }
+
+  /* ─── PUBLICATIONS ─── */
+  #publications { background: var(--bg); }
+  .pub-list { display: flex; flex-direction: column; gap: 16px; }
+  .pub-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 28px;
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+  .pub-item:hover {
+    border-color: rgba(0,229,255,0.25);
+    transform: translateX(4px);
+    box-shadow: -4px 0 0 var(--accent);
+  }
+  .pub-year {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    min-width: 44px;
+    padding-top: 2px;
+    border-right: 1px solid var(--border);
+    padding-right: 24px;
+  }
+  .pub-info { flex: 1; }
+  .pub-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text);
+    margin-bottom: 6px;
+    line-height: 1.4;
+  }
+  .pub-authors {
+    font-size: 0.82rem;
+    color: var(--text2);
+    margin-bottom: 8px;
+  }
+  .pub-venue {
+    font-size: 0.78rem;
+    color: var(--text3);
+    font-style: italic;
+  }
+  .pub-badges {
+    display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;
+  }
+  .pub-badge {
+    font-size: 0.65rem;
+    font-family: 'Space Mono', monospace;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+  }
+  .badge-conf { background: rgba(123,47,255,0.15); color: #a87fff; border: 1px solid rgba(123,47,255,0.2); }
+  .badge-journal { background: rgba(0,229,255,0.08); color: var(--accent); border: 1px solid rgba(0,229,255,0.15); }
+  .badge-award { background: rgba(255,107,53,0.12); color: var(--accent3); border: 1px solid rgba(255,107,53,0.2); }
+  .pub-link {
+    color: var(--text3);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-family: 'Space Mono', monospace;
+    transition: color 0.3s;
+    white-space: nowrap;
+  }
+  .pub-link:hover { color: var(--accent); }
+
+  /* ─── NEWS ─── */
+  #news { background: var(--bg2); }
+  .news-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+  }
+  .news-featured {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.4s;
+    position: relative;
+  }
+  .news-featured:hover { border-color: rgba(0,229,255,0.3); }
+  .news-featured-img {
+    height: 220px;
+    background: linear-gradient(135deg, var(--surface2), #0a1a2a);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .news-featured-img::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, transparent 50%, rgba(13,25,38,0.8));
+  }
+  .news-featured-body { padding: 28px; }
+  .news-cat {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .news-featured h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin-bottom: 12px;
+    line-height: 1.3;
+  }
+  .news-featured p { font-size: 0.88rem; color: var(--text2); line-height: 1.6; }
+  .news-date { font-size: 0.75rem; color: var(--text3); margin-top: 16px; font-family: 'Space Mono', monospace; }
+
+  .news-sidebar { display: flex; flex-direction: column; gap: 16px; }
+  .news-mini {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex; gap: 16px; align-items: flex-start;
+  }
+  .news-mini:hover { border-color: rgba(0,229,255,0.2); transform: translateX(4px); }
+  .news-mini-icon {
+    font-size: 1.5rem;
+    min-width: 40px;
+    height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface2);
+    border-radius: 8px;
+  }
+  .news-mini h4 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+  .news-mini span { font-size: 0.72rem; color: var(--text3); font-family: 'Space Mono', monospace; }
+
+  /* ─── JOIN ─── */
+  #join { background: var(--bg); }
+  .join-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-bottom: 60px;
+  }
+  .join-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 36px;
+    transition: all 0.4s;
+    position: relative;
+    overflow: hidden;
+  }
+  .join-card.featured {
+    border-color: rgba(0,229,255,0.3);
+    background: linear-gradient(135deg, var(--surface), rgba(0,229,255,0.03));
+  }
+  .join-card.featured::before {
+    content: 'OPEN';
+    position: absolute; top: 20px; right: 20px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--accent);
+    background: rgba(0,229,255,0.1);
+    border: 1px solid rgba(0,229,255,0.2);
+    padding: 3px 8px;
+    border-radius: 100px;
+  }
+  .join-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+  .join-card h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+  }
+  .join-card p { font-size: 0.88rem; color: var(--text2); line-height: 1.6; margin-bottom: 24px; }
+  .join-card ul {
+    list-style: none;
+    display: flex; flex-direction: column; gap: 8px;
+    margin-bottom: 28px;
+  }
+  .join-card ul li {
+    font-size: 0.82rem;
+    color: var(--text2);
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .join-card ul li::before { content: '—'; color: var(--accent); }
+
+  /* ─── CONTACT ─── */
+  #contact { background: var(--bg2); }
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 60px;
+    align-items: start;
+  }
+  .contact-info h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.4rem;
+    margin-bottom: 24px;
+  }
+  .contact-detail {
+    display: flex; align-items: flex-start; gap: 16px;
+    margin-bottom: 20px;
+  }
+  .cd-icon {
+    width: 40px; height: 40px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .cd-text strong {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .cd-text span { font-size: 0.88rem; color: var(--text2); }
+
+  .contact-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .contact-form::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { margin-bottom: 20px; }
+  .form-group label {
+    display: block;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.3s;
+    resize: none;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: rgba(0,229,255,0.4);
+    box-shadow: 0 0 0 3px rgba(0,229,255,0.05);
+  }
+  .form-group input::placeholder, .form-group textarea::placeholder {
+    color: var(--text3);
+  }
+  .form-group select option { background: var(--bg2); }
+  .form-submit {
+    width: 100%;
+    background: var(--accent);
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    letter-spacing: 0.5px;
+  }
+  .form-submit:hover {
+    background: #fff;
+    box-shadow: 0 10px 30px rgba(0,229,255,0.25);
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    padding: 48px 60px 32px;
+  }
+  .footer-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 48px;
+  }
+  .footer-brand .nav-logo { margin-bottom: 12px; }
+  .footer-brand p { font-size: 0.85rem; color: var(--text3); max-width: 300px; line-height: 1.6; }
+  .footer-links { display: flex; gap: 60px; }
+  .footer-col h4 {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .footer-col ul li a {
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: color 0.3s;
+  }
+  .footer-col ul li a:hover { color: var(--accent); }
+  .footer-bottom {
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .footer-bottom p { font-size: 0.78rem; color: var(--text3); font-family: 'Space Mono', monospace; }
+  .social-links { display: flex; gap: 12px; }
+  .social-link {
+    width: 36px; height: 36px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    text-decoration: none;
+    color: var(--text2);
+    font-size: 0.9rem;
+    transition: all 0.3s;
+  }
+  .social-link:hover {
+    border-color: rgba(0,229,255,0.3);
+    color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.7s cubic-bezier(0.23, 1, 0.32, 1), transform 0.7s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ─── COUNTER ANIMATION ─── */
+  .count-num { display: inline-block; }
+
+  /* ─── TYPED ─── */
+  .typed-cursor {
+    display: inline-block;
+    width: 3px;
+    background: var(--accent);
+    animation: blink 1s infinite;
+    margin-left: 4px;
+    vertical-align: baseline;
+  }
+  @keyframes blink {
+    0%,50% { opacity: 1; }
+    51%,100% { opacity: 0; }
+  }
+
+  /* ─── MOBILE NAV ─── */
+  .mobile-menu {
+    display: none;
+    position: fixed;
+    inset: 70px 0 0 0;
+    background: rgba(5,10,15,0.97);
+    backdrop-filter: blur(20px);
+    z-index: 999;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    border-top: 1px solid var(--border);
+  }
+  .mobile-menu.open { display: flex; }
+  .mobile-menu a {
+    color: var(--text);
+    text-decoration: none;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.5rem;
+    transition: color 0.3s;
+  }
+  .mobile-menu a:hover { color: var(--accent); }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 900px) {
+    section { padding: 80px 24px; }
+    #hero { padding: 100px 24px 60px; }
+    nav { padding: 0 24px; }
+    footer { padding: 48px 24px 32px; }
+    .about-grid { grid-template-columns: 1fr; }
+    .research-grid { grid-template-columns: repeat(2, 1fr); }
+    .exec-grid { grid-template-columns: repeat(2, 1fr); }
+    .advisor-grid { grid-template-columns: 1fr; }
+    .member-grid { grid-template-columns: repeat(3, 1fr); }
+    .news-grid { grid-template-columns: 1fr; }
+    .join-grid { grid-template-columns: 1fr; }
+    .contact-grid { grid-template-columns: 1fr; }
+    .footer-top { flex-direction: column; gap: 40px; }
+    .footer-links { gap: 32px; flex-wrap: wrap; }
+    .nav-links { display: none; }
+    .hamburger { display: flex; }
+    .hero-stats { gap: 32px; }
+    .form-row { grid-template-columns: 1fr; }
+    .scroll-indicator { display: none; }
+  }
+  @media (max-width: 600px) {
+    .research-grid { grid-template-columns: 1fr; }
+    .exec-grid { grid-template-columns: 1fr; }
+    .member-grid { grid-template-columns: repeat(2, 1fr); }
+    .footer-bottom { flex-direction: column; gap: 16px; text-align: center; }
+  }
+
+  /* ─── COUNTER STRIP ─── */
+  .counter-strip {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 40px 60px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+  .cs-item { text-align: center; }
+  .cs-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--accent);
+    display: block;
+  }
+  .cs-label {
+    font-size: 0.78rem;
+    color: var(--text3);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-family: 'Space Mono', monospace;
+  }
+  @media (max-width: 900px) {
+    .counter-strip { grid-template-columns: repeat(2,1fr); padding: 40px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="grid-bg"></div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="nav-logo">
+    <div class="dot"></div>
+    AI & ML·BD
+  </div>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#research">Research</a></li>
+    <li><a href="#people">People</a></li>
+    <li><a href="#publications">Publications</a></li>
+    <li><a href="#news">News</a></li>
+    <li><a href="#join">Join Us</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <button class="hamburger" id="hamburger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- Mobile Menu -->
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#about" onclick="closeMobile()">About</a>
+  <a href="#research" onclick="closeMobile()">Research</a>
+  <a href="#people" onclick="closeMobile()">People</a>
+  <a href="#publications" onclick="closeMobile()">Publications</a>
+  <a href="#news" onclick="closeMobile()">News</a>
+  <a href="#join" onclick="closeMobile()">Join Us</a>
+  <a href="#contact" onclick="closeMobile()">Contact</a>
+</div>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-orb hero-orb-1"></div>
+  <div class="hero-orb hero-orb-2"></div>
+  <div class="hero-content">
+    <div class="hero-badge">ESTABLISHED 2026 —  BANGLADESH</div>
+    <h1 class="hero-title">
+      <span class="line-accent">AI & ML</span><br>
+      Research Lab<span id="typed-text"></span><span class="typed-cursor"></span><br>
+      <span class="line-dim">Bangladesh</span>
+    </h1>
+    <p class="hero-sub">
+      Advancing the frontiers of Artificial Intelligence and Machine Learning research 
+      to solve real-world challenges in Bangladesh and beyond.
+    </p>
+    <div class="hero-cta">
+      <a href="#research" class="btn-primary">Explore Research →</a>
+      <a href="#join" class="btn-outline">Join Our Lab</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <span class="stat-num" data-target="12">0</span>
+        <span class="stat-label">Researchers</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" data-target="8">0</span>
+        <span class="stat-label">Advisors</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" data-target="24">0</span>
+        <span class="stat-label">Publications</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" data-target="6">0</span>
+        <span class="stat-label">Active Projects</span>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-indicator">
+    <div class="scroll-line"></div>
+    Scroll to Explore
+  </div>
+</section>
+
+<!-- COUNTER STRIP -->
+<div class="counter-strip">
+  <div class="cs-item reveal">
+    <span class="cs-num">NLP</span>
+    <span class="cs-label">Natural Language Processing</span>
+  </div>
+  <div class="cs-item reveal">
+    <span class="cs-num">CV</span>
+    <span class="cs-label">Computer Vision</span>
+  </div>
+  <div class="cs-item reveal">
+    <span class="cs-num">RL</span>
+    <span class="cs-label">Reinforcement Learning</span>
+  </div>
+  <div class="cs-item reveal">
+    <span class="cs-num">XAI</span>
+    <span class="cs-label">Explainable AI</span>
+  </div>
+</div>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="about-grid">
+    <div class="about-text reveal">
+      <span class="section-tag">// About the Lab</span>
+      <h2 class="section-title">Pioneering AI Research<br>in South Asia</h2>
+      <p>
+        AI &amp; ML Research Lab Bangladesh is an independent, interdisciplinary research 
+        institute dedicated to advancing artificial intelligence and machine learning 
+        research with a focus on applications relevant to the South Asian context.
+      </p>
+      <p>
+        Founded by a team of passionate researchers, professors, and industry experts, 
+        our lab bridges the gap between cutting-edge academic research and real-world 
+        deployment in healthcare, agriculture, education, and governance.
+      </p>
+      <ul class="value-list">
+        <li>Open, reproducible, and collaborative research culture</li>
+        <li>Strong ties with industry partners and government bodies</li>
+        <li>Dedicated mentorship for emerging Bangladeshi AI researchers</li>
+        <li>Focus on low-resource and multilingual AI for Bangla language</li>
+        <li>International conference participation and publication support</li>
+      </ul>
+    </div>
+    <div class="about-visual reveal">
+      <div class="about-box">
+        <div class="mission-card">
+          <h4>🎯 Mission</h4>
+          <p>To conduct world-class AI &amp; ML research that addresses the unique challenges of Bangladesh, while training the next generation of AI leaders.</p>
+        </div>
+        <div class="mission-card">
+          <h4>👁 Vision</h4>
+          <p>To become the leading AI research hub in South Asia, contributing to global knowledge while driving local innovation and technological sovereignty.</p>
+        </div>
+        <div class="mission-card">
+          <h4>⚡ Focus Areas</h4>
+          <p>Bangla NLP, Crop Disease Detection, Healthcare AI, Climate Modeling, Educational Technology, and Responsible AI Governance.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RESEARCH -->
+<section id="research">
+  <span class="section-tag reveal">// Research Areas</span>
+  <h2 class="section-title reveal">What We Investigate</h2>
+  <p class="section-sub reveal">Our research spans multiple domains of AI and ML, from foundational theory to applied systems.</p>
+  <div class="research-grid">
+    <div class="research-card reveal">
+      <div class="rc-icon">🗣️</div>
+      <div class="rc-title">Natural Language Processing</div>
+      <div class="rc-desc">Bangla language models, sentiment analysis, machine translation, named entity recognition, and low-resource language AI for South Asian languages.</div>
+      <span class="rc-tag">NLP · LLM · Bangla AI</span>
+    </div>
+    <div class="research-card reveal">
+      <div class="rc-icon">👁️</div>
+      <div class="rc-title">Computer Vision</div>
+      <div class="rc-desc">Object detection, image segmentation, medical image analysis, satellite imagery processing, and real-time video understanding systems.</div>
+      <span class="rc-tag">CV · Detection · Segmentation</span>
+    </div>
+    <div class="research-card reveal">
+      <div class="rc-icon">🏥</div>
+      <div class="rc-title">Healthcare AI</div>
+      <div class="rc-desc">Disease prediction, clinical decision support, diagnostic imaging AI, drug discovery, and patient data privacy with federated learning.</div>
+      <span class="rc-tag">HealthAI · Diagnostics · FL</span>
+    </div>
+    <div class="research-card reveal">
+      <div class="rc-icon">🌾</div>
+      <div class="rc-title">Agricultural Intelligence</div>
+      <div class="rc-desc">Crop disease detection, yield prediction, smart irrigation, pest recognition, and precision agriculture using drone imagery and IoT sensors.</div>
+      <span class="rc-tag">AgriAI · Smart Farming</span>
+    </div>
+    <div class="research-card reveal">
+      <div class="rc-icon">🔍</div>
+      <div class="rc-title">Explainable AI (XAI)</div>
+      <div class="rc-desc">Building transparent and interpretable machine learning models, fairness-aware algorithms, and tools for AI auditing and accountability.</div>
+      <span class="rc-tag">XAI · Fairness · Trust</span>
+    </div>
+    <div class="research-card reveal">
+      <div class="rc-icon">🤖</div>
+      <div class="rc-title">Reinforcement Learning</div>
+      <div class="rc-desc">Multi-agent systems, robotics control, game-playing agents, optimization problems, and real-world RL deployment challenges.</div>
+      <span class="rc-tag">RL · Robotics · Optimization</span>
+    </div>
+  </div>
+</section>
+
+<!-- PEOPLE -->
+<section id="people">
+  <span class="section-tag reveal">// Our Team</span>
+  <h2 class="section-title reveal">The People Behind the Research</h2>
+  <p class="section-sub reveal">Our lab is composed of distinguished professors, dedicated researchers, and talented students working together.</p>
+
+  <div class="people-tabs reveal">
+    <button class="tab-btn active" onclick="switchTab('exec')">Executive Body</button>
+    <button class="tab-btn" onclick="switchTab('advisor')">Faculty Advisors</button>
+    <button class="tab-btn" onclick="switchTab('members')">Researchers</button>
+  </div>
+
+  <!-- Executive Body -->
+  <div class="tab-content active exec-grid" id="tab-exec">
+    <div class="person-card reveal">
+      <div class="person-avatar" style="background: linear-gradient(135deg, #00e5ff, #0090a8);">AR</div>
+      <div class="person-name">Coming soon....</div>
+      <div class="person-role">Director</div>
+      <div class="person-dept">BSc. on ......<br>CU</div>
+    </div>
+    <div class="person-card reveal">
+      <div class="person-avatar" style="background: linear-gradient(135deg, #7b2fff, #4a1a99);">SH</div>
+      <div class="person-name">Coming soon...</div>
+      <div class="person-role">Co-Director</div>
+      <div class="person-dept">BSc. on .......<br>BUET</div>
+    </div>
+    <div class="person-card reveal">
+      <div class="person-avatar" style="background: linear-gradient(135deg, #ff6b35, #cc4400);">MK</div>
+      <div class="person-name">Coming soon......</div>
+      <div class="person-role">Research Director</div>
+      <div class="person-dept">BSc. on ........<br>IUT</div>
+    </div>
+    <div class="person-card reveal">
+      <div class="person-avatar" style="background: linear-gradient(135deg, #00e5ff, #7b2fff);">FN</div>
+      <div class="person-name">Coming soon....</div>
+      <div class="person-role">Operations Head</div>
+      <div class="person-dept">BSc. on....<br>BRAC</div>
+    </div>
+  </div>
+
+  <!-- Advisors -->
+  <div class="tab-content advisor-grid" id="tab-advisor">
+    <div class="advisor-card reveal">
+      <div class="person-card" style="text-align:left;">
+        <div class="person-avatar" style="background: linear-gradient(135deg,#00e5ff,#0070a0); margin:0 0 16px 0; width:72px;height:72px;font-size:1.4rem;">MA</div>
+        <div class="person-name">Prof. Dr. Mohammad Ali</div>
+        <div class="person-role">Senior Advisor</div>
+        <div class="person-dept">Professor of CSE, BUET</div>
+        <div class="advisor-expertise">
+          <span class="expertise-tag">NLP</span>
+          <span class="expertise-tag">Deep Learning</span>
+          <span class="expertise-tag">Bangla AI</span>
+        </div>
+      </div>
+    </div>
+    <div class="advisor-card reveal">
+      <div class="person-card" style="text-align:left;">
+        <div class="person-avatar" style="background: linear-gradient(135deg,#7b2fff,#4a00cc); margin:0 0 16px 0; width:72px;height:72px;font-size:1.4rem;">RB</div>
+        <div class="person-name">Prof. Dr. Rifat Begum</div>
+        <div class="person-role">Research Advisor</div>
+        <div class="person-dept">Professor of EEE, DU</div>
+        <div class="advisor-expertise">
+          <span class="expertise-tag">Computer Vision</span>
+          <span class="expertise-tag">Signal Processing</span>
+        </div>
+      </div>
+    </div>
+    <div class="advisor-card reveal">
+      <div class="person-card" style="text-align:left;">
+        <div class="person-avatar" style="background: linear-gradient(135deg,#ff6b35,#cc4000); margin:0 0 16px 0; width:72px;height:72px;font-size:1.4rem;">TH</div>
+        <div class="person-name">Prof. Dr. Tarek Hossain</div>
+        <div class="person-role">Industry Advisor</div>
+        <div class="person-dept">Professor of CSE, RUET</div>
+        <div class="advisor-expertise">
+          <span class="expertise-tag">Healthcare AI</span>
+          <span class="expertise-tag">Bioinformatics</span>
+          <span class="expertise-tag">XAI</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Members -->
+  <div class="tab-content member-grid" id="tab-members">
+    <div class="person-card reveal" style="padding:20px;">
+      <div class="person-avatar" style="background: linear-gradient(135deg,#00e5ff,#005f80); width:54px;height:54px;font-size:1.1rem;">RH</div>
+      <div class="person-name" style="font-size:0.82rem;">Rafiq Hasan</div>
+      <div class="person-role" style="font-size:0.65rem;">PhD Researcher</div>
+      <div class="person-dept" style="font-size:0.7rem;">NLP</div>
+    </div>
+    <div class="person-card reveal" style="padding:20px;">
+      <div class="person-avatar" style="background: linear-gradient(135deg,#7b2fff,#3a0099); width:54px;height:54px;font-size:1.1rem;">NA</div>
+      <div class="person-name" style="font-size:0.82rem;">Nadia Akter</div>
+      <div class="person-role" style="font-size:0.65rem;">MS Researcher</div>
+      <div class="person-dept" style="font-size:0.7rem;">Computer Vision</div>
+    </div>
+    <div class="person-card reveal" style="padding:20px;">
+      <div class="person-avatar" style="background: linear-gradient(135deg,#ff6b35,#aa3300); width:54px;height:54px;font-size:1.1rem;">SI</div>
+      <div class="person-name" style="font-size:0.82rem;">Sabbir Islam</div>
+      <div class="person-role" style="font-size:0.65rem;">Research Assistant</div>
+      <div class="person-dept" style="font-size:0.7rem;">Healthcare AI</div>
+    </div>
+    <div class="person-card reveal" style="padding:20px;">
+      <div class="person-avatar" style="background: linear-gradient(135deg,#00e5ff,#7b2fff); width:54px;height:54px;font-size:1.1rem;">MJ</div>
+      <div class="person-name" style="font-size:0.82rem;">Mitu Jahan</div>
+      <div class="person-role" style="font-size:0.65rem;">PhD Researcher</div>
+      <div class="person-dept" style="font-size:0.7rem;">AgriAI</div>
+    </div>
+    <div class="person-card reveal" style="padding:20px;">
+      <div class="person-avatar" style="background: linear-gradient(135deg,#00c49a,#006644); width:54px;height:54px;font-size:1.1rem;">AR</div>
+      <div class="person-name" style="font-size:0.82rem;">Alim Reza</div>
+      <div class="person-role" style="font-size:0.65rem;">Research Intern</div>
+      <div class="person-dept" style="font-size:0.7rem;">RL</div>
+    </div>
+  </div>
+</section>
+
+<!-- PUBLICATIONS -->
+<section id="publications">
+  <span class="section-tag reveal">// Publications</span>
+  <h2 class="section-title reveal">Recent Research Output</h2>
+  <p class="section-sub reveal">Peer-reviewed papers, conference proceedings, and technical reports from our lab.</p>
+  <div class="pub-list">
+    <div class="pub-item reveal">
+      <div class="pub-year">2024</div>
+      <div class="pub-info">
+        <div class="pub-title">BanglaBERT-XL: A Large-Scale Pretrained Language Model for Bangla with Enhanced Low-Resource Capabilities</div>
+        <div class="pub-authors">Arif Rahman, Sumaiya Haque, Rafiq Hasan, Mohammad Ali</div>
+        <div class="pub-venue">Proceedings of ACL 2024 — Association for Computational Linguistics</div>
+        <div class="pub-badges">
+          <span class="pub-badge badge-conf">ACL 2024</span>
+          <span class="pub-badge badge-award">🏆 Best Paper</span>
+        </div>
+      </div>
+      <a href="#" class="pub-link">PDF ↗</a>
+    </div>
+    <div class="pub-item reveal">
+      <div class="pub-year">2024</div>
+      <div class="pub-info">
+        <div class="pub-title">CropScan: Real-Time Crop Disease Detection Using Lightweight CNN on Edge Devices in Bangladesh</div>
+        <div class="pub-authors">Mitu Jahan, Karim Islam, Tarek Hossain</div>
+        <div class="pub-venue">IEEE Transactions on AgriInformatics — Vol. 3, Issue 2</div>
+        <div class="pub-badges">
+          <span class="pub-badge badge-journal">Journal</span>
+        </div>
+      </div>
+      <a href="#" class="pub-link">PDF ↗</a>
+    </div>
+    <div class="pub-item reveal">
+      <div class="pub-year">2024</div>
+      <div class="pub-info">
+        <div class="pub-title">Federated Learning for Privacy-Preserving Patient Data Analysis in Resource-Constrained Bangladeshi Hospitals</div>
+        <div class="pub-authors">Sabbir Islam, Rifat Begum, Sumaiya Haque</div>
+        <div class="pub-venue">NeurIPS 2024 Workshop on Healthcare AI</div>
+        <div class="pub-badges">
+          <span class="pub-badge badge-conf">NeurIPS 2024</span>
+        </div>
+      </div>
+      <a href="#" class="pub-link">PDF ↗</a>
+    </div>
+    <div class="pub-item reveal">
+      <div class="pub-year">2023</div>
+      <div class="pub-info">
+        <div class="pub-title">Explainability Metrics for Deep Learning Models in High-Stakes Decision Making: A Survey</div>
+        <div class="pub-authors">Nadia Akter, Arif Rahman, Mohammad Ali</div>
+        <div class="pub-venue">ACM Computing Surveys — Vol. 56, Issue 4</div>
+        <div class="pub-badges">
+          <span class="pub-badge badge-journal">Journal</span>
+        </div>
+      </div>
+      <a href="#" class="pub-link">PDF ↗</a>
+    </div>
+  </div>
+  <div style="text-align:center; margin-top:40px;">
+    <a href="#" class="btn-outline">View All Publications →</a>
+  </div>
+</section>
+
+<!-- NEWS -->
+<section id="news">
+  <span class="section-tag reveal">// News & Events</span>
+  <h2 class="section-title reveal">Latest from the Lab</h2>
+  <p class="section-sub reveal">Announcements, events, achievements, and media coverage.</p>
+  <div class="news-grid">
+    <div class="news-featured reveal">
+      <div class="news-featured-img">🤖</div>
+      <div class="news-featured-body">
+        <div class="news-cat">Workshop</div>
+        <h3>International Workshop on Bangla NLP at BUET — Registration Now Open</h3>
+        <p>Join leading researchers from Bangladesh, India, and Europe for a two-day intensive workshop covering the latest advances in Bangla language AI, from tokenization to large language models.</p>
+        <div class="news-date">📅 March 15–16, 2025 · BUET, Dhaka</div>
+      </div>
+    </div>
+    <div class="news-sidebar">
+      <div class="news-mini reveal">
+        <div class="news-mini-icon">🏆</div>
+        <div>
+          <h4>BanglaBERT-XL wins Best Paper at ACL 2024</h4>
+          <span>December 2024</span>
+        </div>
+      </div>
+      <div class="news-mini reveal">
+        <div class="news-mini-icon">🤝</div>
+        <div>
+          <h4>Partnership signed with Bangladesh Agriculture Research Institute</h4>
+          <span>November 2024</span>
+        </div>
+      </div>
+      <div class="news-mini reveal">
+        <div class="news-mini-icon">📢</div>
+        <div>
+          <h4>Lab featured in The Daily Star's Tech supplement</h4>
+          <span>October 2024</span>
+        </div>
+      </div>
+      <div class="news-mini reveal">
+        <div class="news-mini-icon">🎓</div>
+        <div>
+          <h4>3 PhD scholarships awarded to lab researchers</h4>
+          <span>September 2024</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- JOIN -->
+<section id="join">
+  <span class="section-tag reveal">// Opportunities</span>
+  <h2 class="section-title reveal">Join Our Research Community</h2>
+  <p class="section-sub reveal">We welcome talented individuals passionate about AI and ML to contribute to our mission.</p>
+  <div class="join-grid">
+    <div class="join-card featured reveal">
+      <h3>🎓 PhD Fellowship</h3>
+      <p>Fully-funded PhD positions for exceptional candidates working on AI research with real-world impact.</p>
+      <ul>
+        <li>Monthly stipend + research funding</li>
+        <li>International conference travel grants</li>
+        <li>Co-supervision with top professors</li>
+        <li>Industry collaboration opportunities</li>
+      </ul>
+      <a href="#contact" class="btn-primary">Apply Now →</a>
+    </div>
+    <div class="join-card reveal">
+      <h3>💻 Research Internship</h3>
+      <p>Summer and semester-long research internships for undergraduate and graduate students.</p>
+      <ul>
+        <li>3–6 month duration</li>
+        <li>Hands-on research experience</li>
+        <li>Publication opportunity</li>
+        <li>Mentorship from senior researchers</li>
+      </ul>
+      <a href="#contact" class="btn-outline">Apply Now →</a>
+    </div>
+    <div class="join-card reveal">
+      <h3>🤝 Collaboration</h3>
+      <p>We welcome collaborations with universities, industry partners, and government bodies.</p>
+      <ul>
+        <li>Joint research projects</li>
+        <li>Dataset &amp; resource sharing</li>
+        <li>Workshop co-organization</li>
+        <li>Consulting &amp; advisory</li>
+      </ul>
+      <a href="#contact" class="btn-outline">Get in Touch →</a>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="contact-grid">
+    <div class="contact-info reveal">
+      <span class="section-tag">// Contact</span>
+      <h2 class="section-title">Get In Touch</h2>
+      <p style="color:var(--text2); font-size:0.95rem; line-height:1.7; margin-bottom:36px;">
+        Have questions about our research, collaboration opportunities, or admission? We'd love to hear from you.
+      </p>
+      <div class="contact-detail">
+        <div class="cd-icon">📍</div>
+        <div class="cd-text">
+          <strong>Address</strong>
+          <span>AI &amp; ML Research Lab Bangladesh<br>Dhaka, Bangladesh</span>
+        </div>
+      </div>
+      <div class="contact-detail">
+        <div class="cd-icon">✉️</div>
+        <div class="cd-text">
+          <strong>Email</strong>
+          <span>info@aiml-lab.bd</span>
+        </div>
+      </div>
+      <div class="contact-detail">
+        <div class="cd-icon">📞</div>
+        <div class="cd-text">
+          <strong>Phone</strong>
+          <span>+880 1XXX-XXXXXX</span>
+        </div>
+      </div>
+      <div class="contact-detail">
+        <div class="cd-icon">🕐</div>
+        <div class="cd-text">
+          <strong>Office Hours</strong>
+          <span>Sun–Thu: 9:00 AM – 5:00 PM</span>
+        </div>
+      </div>
+    </div>
+    <div class="contact-form reveal">
+      <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1.2rem; margin-bottom:28px;">Send a Message</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" placeholder="Your name">
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" placeholder="you@email.com">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Subject</label>
+        <select>
+          <option value="">Select a topic...</option>
+          <option>Research Collaboration</option>
+          <option>PhD Application</option>
+          <option>Internship Inquiry</option>
+          <option>General Question</option>
+          <option>Media / Press</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Message</label>
+        <textarea rows="5" placeholder="Tell us about your inquiry..."></textarea>
+      </div>
+      <button class="form-submit" onclick="handleSubmit(this)">Send Message →</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="nav-logo" style="margin-bottom:12px;">
+        <div class="dot"></div>
+        AI &amp; ML Research Lab Bangladesh
+      </div>
+      <p>Advancing AI research for a better Bangladesh and a smarter world. Open, collaborative, impactful.</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col">
+        <h4>Lab</h4>
+        <ul>
+          <li><a href="#about">About</a></li>
+          <li><a href="#research">Research</a></li>
+          <li><a href="#people">Team</a></li>
+          <li><a href="#publications">Publications</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Engage</h4>
+        <ul>
+          <li><a href="#news">News</a></li>
+          <li><a href="#join">Join Us</a></li>
+          <li><a href="#contact">Contact</a></li>
+          <li><a href="#">GitHub</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="#">Datasets</a></li>
+          <li><a href="#">Open Source</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Press Kit</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2024 AI &amp; ML Research Lab Bangladesh. All rights reserved.</p>
+    <div class="social-links">
+      <a href="#" class="social-link" title="GitHub">⌥</a>
+      <a href="#" class="social-link" title="Twitter">𝕏</a>
+      <a href="#" class="social-link" title="LinkedIn">in</a>
+      <a href="#" class="social-link" title="ResearchGate">R</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ─── Custom Cursor ───
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; cursor.style.left = mx + 'px'; cursor.style.top = my + 'px'; });
+function animRing() {
+  rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+  requestAnimationFrame(animRing);
+}
+animRing();
+document.querySelectorAll('a, button, .research-card, .person-card, .pub-item, .news-mini, .news-featured').forEach(el => {
+  el.addEventListener('mouseenter', () => { cursor.style.width = '20px'; cursor.style.height = '20px'; cursor.style.background = '#fff'; ring.style.width = '50px'; ring.style.height = '50px'; });
+  el.addEventListener('mouseleave', () => { cursor.style.width = '12px'; cursor.style.height = '12px'; cursor.style.background = 'var(--accent)'; ring.style.width = '36px'; ring.style.height = '36px'; });
+});
+
+// ─── Navbar Scroll ───
+const nav = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 50);
+});
+
+// ─── Hamburger ───
+const burger = document.getElementById('hamburger');
+const mMenu = document.getElementById('mobileMenu');
+burger.addEventListener('click', () => { mMenu.classList.toggle('open'); });
+function closeMobile() { mMenu.classList.remove('open'); }
+
+// ─── Typed Text ───
+const phrases = [' — Bangladesh', ' — ভবিষ্যৎ', ' — Innovation', ' — BanglaAI'];
+let pi = 0, ci = 0, del = false;
+const el = document.getElementById('typed-text');
+function type() {
+  const phrase = phrases[pi];
+  if (!del) { el.textContent = phrase.slice(0, ++ci); if (ci === phrase.length) { del = true; setTimeout(type, 1800); return; } }
+  else { el.textContent = phrase.slice(0, --ci); if (ci === 0) { del = false; pi = (pi + 1) % phrases.length; } }
+  setTimeout(type, del ? 40 : 80);
+}
+setTimeout(type, 1200);
+
+// ─── Scroll Reveal ───
+const revealEls = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      setTimeout(() => entry.target.classList.add('visible'), i * 60);
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+revealEls.forEach(el => observer.observe(el));
+
+// ─── Counter Animation ───
+function animateCounter(el, target, duration = 2000) {
+  let start = 0;
+  const step = target / (duration / 16);
+  const timer = setInterval(() => {
+    start = Math.min(start + step, target);
+    el.textContent = Math.floor(start) + (target > 10 ? '+' : '');
+    if (start >= target) clearInterval(timer);
+  }, 16);
+}
+const counterEls = document.querySelectorAll('[data-target]');
+const counterObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      animateCounter(e.target, parseInt(e.target.dataset.target));
+      counterObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.5 });
+counterEls.forEach(el => counterObs.observe(el));
+
+// ─── Tabs ───
+function switchTab(id) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+  // re-trigger reveal for new content
+  document.querySelectorAll('#tab-' + id + ' .reveal').forEach((el, i) => {
+    el.classList.remove('visible');
+    setTimeout(() => el.classList.add('visible'), i * 80 + 50);
+  });
+}
+
+// ─── Form Submit ───
+function handleSubmit(btn) {
+  btn.textContent = 'Sending...';
+  btn.style.background = 'rgba(0,229,255,0.3)';
+  btn.style.color = 'var(--accent)';
+  setTimeout(() => {
+    btn.textContent = '✓ Message Sent!';
+    btn.style.background = 'rgba(0,229,255,0.15)';
+  }, 1500);
+  setTimeout(() => {
+    btn.textContent = 'Send Message →';
+    btn.style.background = 'var(--accent)';
+    btn.style.color = '#000';
+  }, 4000);
+}
+
+// ─── Particle Canvas ───
+const canvas = document.createElement('canvas');
+canvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:1;opacity:0.4;';
+document.body.appendChild(canvas);
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+const particles = Array.from({length: 60}, () => ({
+  x: Math.random() * canvas.width,
+  y: Math.random() * canvas.height,
+  r: Math.random() * 1.5 + 0.5,
+  vx: (Math.random() - 0.5) * 0.3,
+  vy: (Math.random() - 0.5) * 0.3,
+  alpha: Math.random() * 0.5 + 0.1
+}));
+
+function drawParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x = canvas.width;
+    if (p.x > canvas.width) p.x = 0;
+    if (p.y < 0) p.y = canvas.height;
+    if (p.y > canvas.height) p.y = 0;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(0,229,255,${p.alpha})`;
+    ctx.fill();
+  });
+  // Draw lines between close particles
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 120) {
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.strokeStyle = `rgba(0,229,255,${0.06 * (1 - dist/120)})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+  }
+  requestAnimationFrame(drawParticles);
+}
+drawParticles();
+</script>
+</body>
+</html>
