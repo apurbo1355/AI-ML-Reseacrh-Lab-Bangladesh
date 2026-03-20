@@ -1,1533 +1,1233 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>AI & ML Research Lab — Bangladesh</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #050a0f;
-    --bg2: #080f18;
-    --surface: #0d1926;
-    --surface2: #112233;
-    --accent: #00e5ff;
-    --accent2: #7b2fff;
-    --accent3: #ff6b35;
-    --text: #e8f4f8;
-    --text2: #8bafc4;
-    --text3: #4a7a96;
-    --border: rgba(0,229,255,0.12);
-    --glow: 0 0 40px rgba(0,229,255,0.15);
-  }
+/* ══════════════════════════════════════════
+   RESET & ROOT
+══════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#03070d;
+  --bg2:#050c16;
+  --surface:#081422;
+  --surface2:#0c1d30;
+  --a1:#00ffcc;
+  --a2:#ff3366;
+  --a3:#7c3aff;
+  --a4:#ff9500;
+  --txt:#deedf7;
+  --txt2:#6a9ab8;
+  --txt3:#2e5470;
+  --bdr:rgba(0,255,204,0.1);
+  --bdr2:rgba(0,255,204,0.06);
+  --glow1:rgba(0,255,204,0.15);
+  --glow2:rgba(255,51,102,0.12);
+}
+html{scroll-behavior:smooth;font-size:16px;}
+body{
+  background:var(--bg);
+  color:var(--txt);
+  font-family:'Outfit',sans-serif;
+  overflow-x:hidden;
+  line-height:1.6;
+}
+img{max-width:100%;display:block;}
+a{text-decoration:none;color:inherit;}
+button{font-family:inherit;}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ══════════════════════════════════════════
+   CURSOR
+══════════════════════════════════════════ */
+.cur{
+  width:10px;height:10px;
+  background:var(--a1);
+  border-radius:50%;
+  position:fixed;top:0;left:0;
+  pointer-events:none;z-index:99999;
+  transform:translate(-50%,-50%);
+  transition:width .25s,height .25s,background .25s,opacity .3s;
+  mix-blend-mode:screen;
+}
+.cur-ring{
+  width:32px;height:32px;
+  border:1px solid rgba(0,255,204,.45);
+  border-radius:50%;
+  position:fixed;top:0;left:0;
+  pointer-events:none;z-index:99998;
+  transform:translate(-50%,-50%);
+  transition:width .3s,height .3s,border-color .3s;
+}
+body.hovering .cur{width:22px;height:22px;background:#fff;}
+body.hovering .cur-ring{width:52px;height:52px;border-color:rgba(255,255,255,.3);}
+@media(max-width:768px){.cur,.cur-ring{display:none;}body{cursor:auto;}}
 
-  html { scroll-behavior: smooth; }
+/* ══════════════════════════════════════════
+   CANVAS BG
+══════════════════════════════════════════ */
+#bgCanvas{
+  position:fixed;inset:0;
+  pointer-events:none;
+  z-index:0;
+  opacity:.7;
+}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    overflow-x: hidden;
-    cursor: none;
-  }
+/* ══════════════════════════════════════════
+   NOISE OVERLAY
+══════════════════════════════════════════ */
+.noise{
+  position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='.045'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:1;opacity:.5;
+}
 
-  /* ─── Custom Cursor ─── */
-  .cursor {
-    width: 12px; height: 12px;
-    background: var(--accent);
-    border-radius: 50%;
-    position: fixed; top: 0; left: 0;
-    pointer-events: none;
-    z-index: 9999;
-    transform: translate(-50%, -50%);
-    transition: transform 0.1s, width 0.3s, height 0.3s, background 0.3s;
-    mix-blend-mode: screen;
-  }
-  .cursor-ring {
-    width: 36px; height: 36px;
-    border: 1.5px solid rgba(0,229,255,0.5);
-    border-radius: 50%;
-    position: fixed; top: 0; left: 0;
-    pointer-events: none;
-    z-index: 9998;
-    transform: translate(-50%, -50%);
-    transition: all 0.15s ease;
-  }
-  body:hover .cursor { opacity: 1; }
+/* ══════════════════════════════════════════
+   NAVBAR
+══════════════════════════════════════════ */
+nav{
+  position:fixed;top:0;left:0;right:0;
+  height:68px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 clamp(20px,4vw,60px);
+  z-index:9000;
+  backdrop-filter:blur(24px) saturate(1.5);
+  background:rgba(3,7,13,.75);
+  border-bottom:1px solid var(--bdr);
+  transition:height .4s,background .4s;
+}
+nav.shrunk{height:56px;background:rgba(3,7,13,.95);}
 
-  /* ─── Noise Overlay ─── */
-  body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 9990;
-    opacity: 0.4;
-  }
+.nav-brand{
+  display:flex;align-items:center;gap:10px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.9rem;font-weight:700;
+  color:var(--a1);letter-spacing:.5px;
+  position:relative;
+}
+.brand-dot{
+  width:9px;height:9px;
+  background:var(--a1);
+  border-radius:50%;
+  animation:livePulse 1.8s infinite;
+  box-shadow:0 0 12px var(--a1);
+}
+@keyframes livePulse{0%,100%{transform:scale(1);opacity:1;box-shadow:0 0 8px var(--a1);}50%{transform:scale(1.7);opacity:.5;box-shadow:0 0 20px var(--a1);}}
 
-  /* ─── Grid Lines ─── */
-  .grid-bg {
-    position: fixed; inset: 0;
-    background-image:
-      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
-    background-size: 60px 60px;
-    pointer-events: none;
-    z-index: 0;
-  }
+.nav-links{
+  display:flex;align-items:center;gap:clamp(16px,2.5vw,36px);
+  list-style:none;
+}
+.nav-links a{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.75rem;font-weight:500;
+  color:var(--txt2);letter-spacing:.8px;
+  position:relative;transition:color .3s;
+}
+.nav-links a::after{
+  content:'';position:absolute;
+bottom:-5px;left:0;width:0;height:1px;
+  background:var(--a1);transition:width .35s cubic-bezier(.23,1,.32,1);
+}
+.nav-links a:hover{color:var(--a1);}
+.nav-links a:hover::after{width:100%;}
 
-  /* ─── NAV ─── */
-  nav {
-    position: fixed; top: 0; width: 100%;
-    z-index: 1000;
-    padding: 0 40px;
-    height: 70px;
-    display: flex; align-items: center; justify-content: space-between;
-    backdrop-filter: blur(20px);
-    background: rgba(5,10,15,0.7);
-    border-bottom: 1px solid var(--border);
-    transition: all 0.4s;
-  }
-  nav.scrolled {
-    height: 60px;
-    background: rgba(5,10,15,0.95);
-  }
-  .nav-logo {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 1.1rem;
-    color: var(--accent);
-    letter-spacing: -0.5px;
-    display: flex; align-items: center; gap: 10px;
-  }
-  .nav-logo .dot {
-    width: 8px; height: 8px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%,100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.6); opacity: 0.5; }
-  }
-  .nav-links {
-    display: flex; gap: 32px; list-style: none;
-  }
-  .nav-links a {
-    color: var(--text2);
-    text-decoration: none;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
-    font-family: 'Space Mono', monospace;
-    transition: color 0.3s;
-    position: relative;
-  }
-  .nav-links a::after {
-    content: '';
-    position: absolute; bottom: -4px; left: 0;
-    width: 0; height: 1px;
-    background: var(--accent);
-    transition: width 0.3s;
-  }
-  .nav-links a:hover { color: var(--accent); }
-  .nav-links a:hover::after { width: 100%; }
+.nav-cta{
+  background:var(--a1);color:#000;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.7rem;font-weight:700;
+  padding:8px 18px;border-radius:3px;
+  border:none;cursor:pointer;
+  letter-spacing:1px;
+  transition:all .3s;
+  white-space:nowrap;
+}
+.nav-cta:hover{background:#fff;transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,255,204,.35);}
 
-  .hamburger {
-    display: none;
-    flex-direction: column;
-    gap: 5px;
-    cursor: pointer;
-    background: none;
-    border: none;
-    padding: 4px;
-  }
-  .hamburger span {
-    display: block;
-    width: 24px; height: 2px;
-    background: var(--accent);
-    transition: all 0.3s;
-  }
+.nav-right{display:flex;align-items:center;gap:16px;}
 
-  /* ─── HERO ─── */
-  #hero {
-    min-height: 100vh;
-    display: flex; align-items: center;
-    padding: 100px 60px 60px;
-    position: relative;
-    overflow: hidden;
-  }
+/* Hamburger */
+.ham{
+  display:none;flex-direction:column;gap:5px;
+  background:none;border:none;cursor:pointer;padding:6px;
+}
+.ham span{display:block;width:22px;height:2px;background:var(--a1);transition:all .35s cubic-bezier(.23,1,.32,1);border-radius:2px;}
+.ham.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.ham.open span:nth-child(2){opacity:0;transform:scaleX(0);}
+.ham.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
 
-  .hero-orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    pointer-events: none;
-  }
-  .hero-orb-1 {
-    width: 600px; height: 600px;
-    background: radial-gradient(circle, rgba(0,229,255,0.08) 0%, transparent 70%);
-    top: -100px; right: -100px;
-    animation: float1 8s ease-in-out infinite;
-  }
-  .hero-orb-2 {
-    width: 400px; height: 400px;
-    background: radial-gradient(circle, rgba(123,47,255,0.1) 0%, transparent 70%);
-    bottom: 0; left: 100px;
-    animation: float2 10s ease-in-out infinite;
-  }
-  @keyframes float1 {
-    0%,100% { transform: translate(0,0) scale(1); }
-    50% { transform: translate(-30px, 20px) scale(1.05); }
-  }
-  @keyframes float2 {
-    0%,100% { transform: translate(0,0); }
-    50% { transform: translate(20px, -30px); }
-  }
+/* Mobile drawer */
+.mob-drawer{
+  position:fixed;inset:68px 0 0 0;
+  background:rgba(3,7,13,.97);
+  backdrop-filter:blur(30px);
+  z-index:8999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;
+  transform:translateX(100%);
+  transition:transform .5s cubic-bezier(.23,1,.32,1);
+  border-top:1px solid var(--bdr);
+}
+.mob-drawer.open{transform:translateX(0);}
+.mob-drawer a{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:2.2rem;letter-spacing:3px;
+  color:var(--txt2);transition:color .3s, letter-spacing .3s;
+}
+.mob-drawer a:hover{color:var(--a1);letter-spacing:5px;}
 
-  .hero-content { position: relative; z-index: 2; max-width: 900px; }
+/* ══════════════════════════════════════════
+   HERO
+══════════════════════════════════════════ */
+#hero{
+  min-height:100svh;
+  display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+  padding:120px clamp(20px,6vw,100px) 80px;
+  position:relative;overflow:hidden;
+  z-index:2;
+}
 
-  .hero-badge {
-    display: inline-flex; align-items: center; gap: 8px;
-    border: 1px solid var(--border);
-    background: rgba(0,229,255,0.05);
-    padding: 6px 16px;
-    border-radius: 100px;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.72rem;
-    color: var(--accent);
-    letter-spacing: 1px;
-    margin-bottom: 32px;
-    animation: fadeUp 0.8s ease both;
-  }
-  .hero-badge::before {
-    content: '';
-    width: 6px; height: 6px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: pulse 1.5s infinite;
-  }
+.hero-kicker{
+  display:inline-flex;align-items:center;gap:10px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.7rem;letter-spacing:3px;
+  color:var(--a1);text-transform:uppercase;
+  background:rgba(0,255,204,.06);
+  border:1px solid rgba(0,255,204,.2);
+  padding:7px 16px;border-radius:2px;
+  margin-bottom:28px;
+  opacity:0;animation:riseIn .9s .1s cubic-bezier(.23,1,.32,1) forwards;
+}
+.hero-kicker-dot{width:6px;height:6px;background:var(--a1);border-radius:50%;animation:livePulse 1.5s infinite;}
 
-  h1.hero-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: clamp(2.8rem, 6vw, 5.5rem);
-    line-height: 1.05;
-    letter-spacing: -2px;
-    margin-bottom: 24px;
-    animation: fadeUp 0.8s 0.1s ease both;
-  }
-  .hero-title .line-accent { color: var(--accent); }
-  .hero-title .line-dim { color: var(--text3); }
+.hero-h1{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(3.5rem,10vw,10rem);
+  line-height:.92;letter-spacing:2px;
+  margin-bottom:8px;
+  opacity:0;animation:riseIn .9s .2s cubic-bezier(.23,1,.32,1) forwards;
+}
+.hero-h1 .grad{
+  background:linear-gradient(120deg,var(--a1) 0%,#00ccff 40%,var(--a3) 70%,var(--a2) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  background-size:200%;
+  animation:gradShift 4s ease infinite alternate;
+}
+@keyframes gradShift{0%{background-position:0%}100%{background-position:100%}}
 
-  .hero-sub {
-    font-size: 1.1rem;
-    color: var(--text2);
-    max-width: 560px;
-    line-height: 1.7;
-    margin-bottom: 48px;
-    font-weight: 300;
-    animation: fadeUp 0.8s 0.2s ease both;
-  }
+.hero-h1-sub{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(3rem,8vw,8rem);
+  line-height:.92;letter-spacing:2px;
+  color:var(--txt3);
+  opacity:0;animation:riseIn .9s .3s cubic-bezier(.23,1,.32,1) forwards;
+  margin-bottom:32px;
+}
 
-  .hero-cta {
-    display: flex; gap: 16px; flex-wrap: wrap;
-    animation: fadeUp 0.8s 0.3s ease both;
-  }
-  .btn-primary {
-    background: var(--accent);
-    color: #000;
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 0.9rem;
-    padding: 14px 32px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-    transition: all 0.3s;
-    letter-spacing: 0.5px;
-  }
-  .btn-primary:hover {
-    background: #fff;
-    transform: translateY(-2px);
-    box-shadow: 0 16px 40px rgba(0,229,255,0.3);
-  }
-  .btn-outline {
-    background: transparent;
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    font-weight: 600;
-    font-size: 0.9rem;
-    padding: 13px 32px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-    transition: all 0.3s;
-  }
-  .btn-outline:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    transform: translateY(-2px);
-  }
+.hero-desc{
+  max-width:560px;
+  font-size:clamp(.9rem,1.5vw,1.1rem);
+  color:var(--txt2);font-weight:300;line-height:1.75;
+  margin-bottom:44px;
+  opacity:0;animation:riseIn .9s .4s cubic-bezier(.23,1,.32,1) forwards;
+}
 
-  .hero-stats {
-    display: flex; gap: 48px; flex-wrap: wrap;
-    margin-top: 64px;
-    padding-top: 48px;
-    border-top: 1px solid var(--border);
-    animation: fadeUp 0.8s 0.4s ease both;
-  }
-  .stat-item { }
-  .stat-num {
-    font-family: 'Space Mono', monospace;
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--accent);
-    display: block;
-  }
-  .stat-label {
-    font-size: 0.8rem;
-    color: var(--text3);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    font-family: 'Space Mono', monospace;
-  }
+.hero-btns{
+  display:flex;gap:16px;flex-wrap:wrap;
+  opacity:0;animation:riseIn .9s .5s cubic-bezier(.23,1,.32,1) forwards;
+  margin-bottom:64px;
+}
+.btn-glow{
+  background:var(--a1);color:#000;
+  font-family:'JetBrains Mono',monospace;
+  font-weight:700;font-size:.8rem;
+  padding:15px 34px;border-radius:3px;border:none;
+  cursor:pointer;letter-spacing:1.5px;
+  transition:all .4s cubic-bezier(.23,1,.32,1);
+  position:relative;overflow:hidden;
+  display:inline-flex;align-items:center;gap:8px;
+  text-transform:uppercase;
+}
+.btn-glow::before{
+content:'';position:absolute;inset:0;
+  background:linear-gradient(120deg,transparent 0%,rgba(255,255,255,.4) 50%,transparent 100%);
+  transform:translateX(-100%);transition:transform .5s;
+}
+.btn-glow:hover::before{transform:translateX(100%);}
+.btn-glow:hover{transform:translateY(-3px);box-shadow:0 20px 50px rgba(0,255,204,.4);}
+.btn-ghost{
+  background:transparent;color:var(--txt);
+  font-family:'JetBrains Mono',monospace;
+  font-weight:500;font-size:.8rem;
+  padding:14px 34px;border-radius:3px;
+  border:1px solid rgba(255,255,255,.15);
+  cursor:pointer;letter-spacing:1.5px;
+  transition:all .4s cubic-bezier(.23,1,.32,1);
+  display:inline-flex;align-items:center;gap:8px;
+  text-transform:uppercase;
+}
+.btn-ghost:hover{border-color:var(--a1);color:var(--a1);transform:translateY(-3px);}
 
-  /* ─── SCROLL INDICATOR ─── */
-  .scroll-indicator {
-    position: absolute; bottom: 40px; left: 60px;
-    display: flex; align-items: center; gap: 12px;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--text3);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    animation: fadeUp 1s 0.6s ease both;
-  }
-  .scroll-line {
-    width: 40px; height: 1px;
-    background: var(--text3);
-    position: relative;
-    overflow: hidden;
-  }
-  .scroll-line::after {
-    content: '';
-    position: absolute;
-    top: 0; left: -100%;
-    width: 100%; height: 100%;
-    background: var(--accent);
-    animation: scanLine 2s infinite;
-  }
-  @keyframes scanLine {
-    0% { left: -100%; }
-    100% { left: 100%; }
-  }
+.hero-stats{
+  display:flex;flex-wrap:wrap;gap:clamp(24px,4vw,60px);
+  padding-top:40px;border-top:1px solid var(--bdr);
+  opacity:0;animation:riseIn .9s .6s cubic-bezier(.23,1,.32,1) forwards;
+}
+.hstat-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(2rem,4vw,3.2rem);
+  color:var(--a1);display:block;
+  letter-spacing:1px;
+  text-shadow:0 0 30px rgba(0,255,204,.4);
+}
+.hstat-lbl{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem;color:var(--txt3);
+  letter-spacing:2px;text-transform:uppercase;
+}
 
-  /* ─── SECTION BASE ─── */
-  section {
-    padding: 100px 60px;
-    position: relative;
-  }
-  .section-tag {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--accent);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-    display: block;
-  }
-  .section-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: clamp(2rem, 4vw, 3rem);
-    letter-spacing: -1px;
-    line-height: 1.1;
-    margin-bottom: 16px;
-  }
-  .section-sub {
-    color: var(--text2);
-    font-size: 1rem;
-    max-width: 520px;
-    line-height: 1.7;
-    font-weight: 300;
-    margin-bottom: 60px;
-  }
+/* scroll cue */
+.scroll-cue{
+  position:absolute;bottom:36px;right:clamp(20px,5vw,80px);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  color:var(--txt3);letter-spacing:2px;text-transform:uppercase;
+  writing-mode:vertical-rl;
+  opacity:0;animation:riseIn 1s .9s ease forwards;
+}
+.scroll-line-vert{
+  width:1px;height:60px;background:var(--txt3);
+  position:relative;overflow:hidden;
+}
+.scroll-line-vert::after{
+  content:'';position:absolute;top:-100%;left:0;
+  width:100%;height:100%;background:var(--a1);
+  animation:scrollDrop 2s 1s ease-in-out infinite;
+}
+@keyframes scrollDrop{0%{top:-100%}100%{top:200%}}
 
-  /* ─── ABOUT ─── */
-  #about { background: var(--bg2); }
-  .about-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 60px;
-    align-items: center;
-  }
-  .about-visual {
-    position: relative;
-  }
-  .about-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 40px;
-    position: relative;
-    overflow: hidden;
-  }
-  .about-box::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--accent), var(--accent2), transparent);
-  }
-  .mission-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 24px;
-    margin-top: 20px;
-  }
-  .mission-card h4 {
-    font-family: 'Syne', sans-serif;
-    font-size: 0.9rem;
-    color: var(--accent);
-    margin-bottom: 8px;
-    letter-spacing: 1px;
-  }
-  .mission-card p {
-    font-size: 0.9rem;
-    color: var(--text2);
-    line-height: 1.6;
-  }
-  .about-text p {
-    color: var(--text2);
-    line-height: 1.8;
-    margin-bottom: 20px;
-    font-size: 0.95rem;
-  }
-  .value-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 32px;
-  }
-  .value-list li {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 0.9rem;
-    color: var(--text2);
-  }
-  .value-list li::before {
-    content: '▸';
-    color: var(--accent);
-    font-size: 0.8rem;
-  }
+@keyframes riseIn{from{opacity:0;transform:translateY(40px);}to{opacity:1;transform:translateY(0);}}
 
-  /* ─── RESEARCH AREAS ─── */
-  #research {
-    background: var(--bg);
-  }
-  .research-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-  }
-  .research-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 32px;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-    cursor: pointer;
-  }
-  .research-card::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: linear-gradient(135deg, rgba(0,229,255,0.05) 0%, transparent 60%);
-    opacity: 0;
-    transition: opacity 0.4s;
-  }
-  .research-card:hover {
-    transform: translateY(-6px);
-    border-color: rgba(0,229,255,0.3);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,229,255,0.1);
-  }
-  .research-card:hover::before { opacity: 1; }
+/* ══════════════════════════════════════════
+   TICKER BAND
+══════════════════════════════════════════ */
+.ticker{
+  background:var(--a1);
+  padding:14px 0;
+  overflow:hidden;
+  position:relative;z-index:2;
+}
+.ticker-track{
+  display:flex;gap:0;
+  animation:tick 18s linear infinite;
+  white-space:nowrap;
+}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ticker-item{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1rem;letter-spacing:3px;
+  color:#000;padding:0 30px;
+  display:inline-flex;align-items:center;gap:12px;
+  flex-shrink:0;
+}
+.ticker-sep{width:6px;height:6px;background:#000;border-radius:50%;opacity:.4;}
 
-  .rc-icon {
-    width: 48px; height: 48px;
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.5rem;
-    margin-bottom: 20px;
-    background: rgba(0,229,255,0.08);
-    border: 1px solid rgba(0,229,255,0.15);
-    transition: all 0.3s;
-  }
-  .research-card:hover .rc-icon {
-    background: rgba(0,229,255,0.15);
-    box-shadow: 0 0 20px rgba(0,229,255,0.2);
-  }
-  .rc-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 1.05rem;
-    margin-bottom: 12px;
-    color: var(--text);
-  }
-  .rc-desc {
-    font-size: 0.85rem;
-    color: var(--text2);
-    line-height: 1.6;
-  }
-  .rc-tag {
-    display: inline-block;
-    margin-top: 20px;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.65rem;
-    color: var(--accent);
-    background: rgba(0,229,255,0.08);
-    border: 1px solid rgba(0,229,255,0.15);
-    padding: 4px 10px;
-    border-radius: 100px;
-    letter-spacing: 1px;
-  }
+/* ══════════════════════════════════════════
+   SECTION BASE
+══════════════════════════════════════════ */
+section{
+  padding:clamp(60px,10vw,120px) clamp(20px,6vw,100px);
+  position:relative;z-index:2;
+}
+.sec-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem;color:var(--a1);
+  letter-spacing:4px;text-transform:uppercase;
+  margin-bottom:14px;display:block;
+}
+.sec-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(2.5rem,6vw,5rem);
+  letter-spacing:2px;line-height:.95;
+  margin-bottom:20px;
+}
+.sec-sub{
+  font-size:clamp(.88rem,1.3vw,1rem);
+  color:var(--txt2);max-width:520px;
+  line-height:1.75;font-weight:300;
+  margin-bottom:clamp(40px,6vw,70px);
+}
 
-  /* ─── PEOPLE ─── */
-  #people { background: var(--bg2); }
-  .people-tabs {
-    display: flex; gap: 4px;
-    margin-bottom: 48px;
-    background: var(--surface);
-    padding: 4px;
-    border-radius: 8px;
-    width: fit-content;
-    border: 1px solid var(--border);
-  }
-  .tab-btn {
-    background: none;
-    border: none;
-    color: var(--text2);
-    font-family: 'Space Mono', monospace;
-    font-size: 0.75rem;
-    padding: 10px 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s;
-    letter-spacing: 0.5px;
-    white-space: nowrap;
-  }
-  .tab-btn.active {
-    background: var(--accent);
-    color: #000;
-    font-weight: 700;
-  }
-  .tab-content { display: none; }
-  .tab-content.active { display: grid; }
+/* Reveal animation */
+.rv{
+  opacity:0;transform:translateY(50px);
+  transition:opacity .8s cubic-bezier(.23,1,.32,1),transform .8s cubic-bezier(.23,1,.32,1);
+}
+.rv.in{opacity:1;transform:translateY(0);}
+.rv2{opacity:0;transform:translateX(-40px);transition:opacity .8s .1s cubic-bezier(.23,1,.32,1),transform .8s .1s cubic-bezier(.23,1,.32,1);}
+.rv2.in{opacity:1;transform:translateX(0);}
 
-  .exec-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; }
-  .advisor-grid { grid-template-columns: repeat(3, 1fr); gap: 24px; }
-  .member-grid { grid-template-columns: repeat(5, 1fr); gap: 16px; }
+/* ══════════════════════════════════════════
+   ABOUT
+══════════════════════════════════════════ */
+#about{background:var(--bg2);}
+.about-wrap{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:clamp(30px,5vw,80px);
+align-items:start;
+}
+@media(max-width:768px){.about-wrap{grid-template-columns:1fr;}}
 
-  .person-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 24px;
-    text-align: center;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-  }
-  .person-card::after {
-    content: '';
-    position: absolute; bottom: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--accent2), var(--accent));
-    transform: scaleX(0);
-    transition: transform 0.4s;
-  }
-  .person-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(0,229,255,0.2);
-  }
-  .person-card:hover::after { transform: scaleX(1); }
+.about-text p{font-size:.95rem;color:var(--txt2);line-height:1.8;margin-bottom:18px;}
+.val-list{list-style:none;margin-top:28px;display:flex;flex-direction:column;gap:14px;}
+.val-list li{
+  display:flex;align-items:flex-start;gap:12px;
+  font-size:.88rem;color:var(--txt2);
+  padding:14px 18px;
+  background:var(--surface);
+  border:1px solid var(--bdr2);
+  border-radius:6px;
+  transition:all .35s;
+}
+.val-list li:hover{border-color:rgba(0,255,204,.25);background:rgba(0,255,204,.04);transform:translateX(6px);}
+.val-list li .vi{color:var(--a1);font-size:1rem;margin-top:1px;flex-shrink:0;}
 
-  .person-avatar {
-    width: 70px; height: 70px;
-    border-radius: 50%;
-    margin: 0 auto 16px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 1.4rem;
-    color: #000;
-    position: relative;
-  }
-  .person-avatar::after {
-    content: '';
-    position: absolute; inset: -3px;
-    border-radius: 50%;
-    border: 1.5px solid rgba(0,229,255,0.3);
-  }
-  .person-name {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 0.9rem;
-    margin-bottom: 4px;
-    color: var(--text);
-  }
-  .person-role {
-    font-size: 0.75rem;
-    color: var(--accent);
-    font-family: 'Space Mono', monospace;
-    margin-bottom: 8px;
-    letter-spacing: 0.5px;
-  }
-  .person-dept {
-    font-size: 0.75rem;
-    color: var(--text3);
-    line-height: 1.4;
-  }
+.about-cards{display:flex;flex-direction:column;gap:18px;}
+.mcard{
+  background:var(--surface);
+  border:1px solid var(--bdr);
+  border-radius:10px;
+  padding:28px;
+  position:relative;overflow:hidden;
+  transition:all .45s cubic-bezier(.23,1,.32,1);
+}
+.mcard::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--a1),var(--a3),transparent);
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .5s cubic-bezier(.23,1,.32,1);
+}
+.mcard:hover::before{transform:scaleX(1);}
+.mcard:hover{transform:translateY(-4px);border-color:rgba(0,255,204,.22);box-shadow:0 24px 60px rgba(0,0,0,.4);}
+.mcard-icon{font-size:1.6rem;margin-bottom:12px;}
+.mcard h4{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--a1);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase;}
+.mcard p{font-size:.85rem;color:var(--txt2);line-height:1.6;}
 
-  .advisor-card .person-card {
-    padding: 32px 24px;
-    text-align: left;
-  }
-  .advisor-card .person-avatar {
-    margin: 0 0 20px 0;
-    width: 80px; height: 80px;
-    font-size: 1.6rem;
-  }
-  .advisor-expertise {
-    display: flex; flex-wrap: wrap; gap: 6px;
-    margin-top: 16px;
-  }
-  .expertise-tag {
-    font-size: 0.65rem;
-    background: rgba(0,229,255,0.07);
-    border: 1px solid rgba(0,229,255,0.15);
-    color: var(--accent);
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-family: 'Space Mono', monospace;
-    letter-spacing: 0.5px;
-  }
+/* ══════════════════════════════════════════
+   RESEARCH
+══════════════════════════════════════════ */
+#research{background:var(--bg);}
+.research-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:clamp(12px,2vw,22px);
+}
+@media(max-width:1024px){.research-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:560px){.research-grid{grid-template-columns:1fr;}}
 
-  /* ─── PUBLICATIONS ─── */
-  #publications { background: var(--bg); }
-  .pub-list { display: flex; flex-direction: column; gap: 16px; }
-  .pub-item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 24px 28px;
-    display: flex;
-    gap: 24px;
-    align-items: flex-start;
-    transition: all 0.3s;
-    cursor: pointer;
-  }
-  .pub-item:hover {
-    border-color: rgba(0,229,255,0.25);
-    transform: translateX(4px);
-    box-shadow: -4px 0 0 var(--accent);
-  }
-  .pub-year {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.75rem;
-    color: var(--accent);
-    min-width: 44px;
-    padding-top: 2px;
-    border-right: 1px solid var(--border);
-    padding-right: 24px;
-  }
-  .pub-info { flex: 1; }
-  .pub-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 600;
-    font-size: 0.95rem;
-    color: var(--text);
-    margin-bottom: 6px;
-    line-height: 1.4;
-  }
-  .pub-authors {
-    font-size: 0.82rem;
-    color: var(--text2);
-    margin-bottom: 8px;
-  }
-  .pub-venue {
-    font-size: 0.78rem;
-    color: var(--text3);
-    font-style: italic;
-  }
-  .pub-badges {
-    display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;
-  }
-  .pub-badge {
-    font-size: 0.65rem;
-    font-family: 'Space Mono', monospace;
-    padding: 3px 8px;
-    border-radius: 4px;
-    letter-spacing: 0.5px;
-  }
-  .badge-conf { background: rgba(123,47,255,0.15); color: #a87fff; border: 1px solid rgba(123,47,255,0.2); }
-  .badge-journal { background: rgba(0,229,255,0.08); color: var(--accent); border: 1px solid rgba(0,229,255,0.15); }
-  .badge-award { background: rgba(255,107,53,0.12); color: var(--accent3); border: 1px solid rgba(255,107,53,0.2); }
-  .pub-link {
-    color: var(--text3);
-    text-decoration: none;
-    font-size: 0.8rem;
-    font-family: 'Space Mono', monospace;
-    transition: color 0.3s;
-    white-space: nowrap;
-  }
-  .pub-link:hover { color: var(--accent); }
+.rcard{
+  background:var(--surface);
+  border:1px solid var(--bdr2);
+  border-radius:10px;padding:30px;
+  position:relative;overflow:hidden;
+  cursor:pointer;
+  transition:all .5s cubic-bezier(.23,1,.32,1);
+}
+.rcard::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(0,255,204,.07) 0%, transparent 60%);
+  opacity:0;transition:opacity .4s;
+}
+.rcard:hover::after{opacity:1;}
+.rcard:hover{transform:translateY(-8px) scale(1.01);border-color:rgba(0,255,204,.3);box-shadow:0 30px 80px rgba(0,0,0,.5),0 0 0 1px rgba(0,255,204,.08);}
+.rcard-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:3.5rem;color:rgba(0,255,204,.06);
+  line-height:1;margin-bottom:16px;
+  letter-spacing:2px;
+  transition:color .4s;
+}
+.rcard:hover .rcard-num{color:rgba(0,255,204,.12);}
+.rcard-icon{font-size:2rem;margin-bottom:16px;}
+.rcard-title{font-family:'Outfit',sans-serif;font-weight:700;font-size:1rem;margin-bottom:10px;color:var(--txt);}
+.rcard-desc{font-size:.83rem;color:var(--txt2);line-height:1.65;}
+.rcard-tags{margin-top:20px;display:flex;flex-wrap:wrap;gap:6px;}
+.rtag{
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  color:var(--a1);background:rgba(0,255,204,.07);
+  border:1px solid rgba(0,255,204,.15);
+  padding:3px 9px;border-radius:2px;letter-spacing:.8px;
+}
 
-  /* ─── NEWS ─── */
-  #news { background: var(--bg2); }
-  .news-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 20px;
-  }
-  .news-featured {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: all 0.4s;
-    position: relative;
-  }
-  .news-featured:hover { border-color: rgba(0,229,255,0.3); }
-  .news-featured-img {
-    height: 220px;
-    background: linear-gradient(135deg, var(--surface2), #0a1a2a);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 4rem;
-    position: relative;
-    overflow: hidden;
-  }
-  .news-featured-img::after {
-    content: '';
-    position: absolute; inset: 0;
-    background: linear-gradient(to bottom, transparent 50%, rgba(13,25,38,0.8));
-  }
-  .news-featured-body { padding: 28px; }
-  .news-cat {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.65rem;
-    color: var(--accent);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-  }
-  .news-featured h3 {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 1.2rem;
-    margin-bottom: 12px;
-    line-height: 1.3;
-  }
-  .news-featured p { font-size: 0.88rem; color: var(--text2); line-height: 1.6; }
-  .news-date { font-size: 0.75rem; color: var(--text3); margin-top: 16px; font-family: 'Space Mono', monospace; }
+/* ══════════════════════════════════════════
+   PEOPLE
+══════════════════════════════════════════ */
+#people{background:var(--bg2);}
+.tabs-row{
+  display:flex;gap:4px;flex-wrap:wrap;
+  margin-bottom:clamp(28px,4vw,48px);
+  background:var(--surface);
+  padding:5px;border-radius:8px;
+  width:fit-content;
+  border:1px solid var(--bdr2);
+}
+.tab{
+  background:none;border:none;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.7rem;color:var(--txt2);
+  padding:9px 20px;border-radius:6px;
+  cursor:pointer;letter-spacing:1px;
+  transition:all .35s;white-space:nowrap;
+}
+.tab.on{background:var(--a1);color:#000;font-weight:700;}
+.tab-panel{display:none;}
+.tab-panel.on{display:grid;}
+.exec-g{grid-template-columns:repeat(4,1fr);gap:16px;}
+.adv-g{grid-template-columns:repeat(3,1fr);gap:20px;}
+.mem-g{grid-template-columns:repeat(5,1fr);gap:14px;}
+@media(max-width:1024px){.exec-g{grid-template-columns:repeat(2,1fr);}.adv-g{grid-template-columns:repeat(2,1fr);}.mem-g{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:560px){.exec-g,.adv-g{grid-template-columns:1fr;}.mem-g{grid-template-columns:repeat(2,1fr);}}
 
-  .news-sidebar { display: flex; flex-direction: column; gap: 16px; }
-  .news-mini {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: flex; gap: 16px; align-items: flex-start;
-  }
-  .news-mini:hover { border-color: rgba(0,229,255,0.2); transform: translateX(4px); }
-  .news-mini-icon {
-    font-size: 1.5rem;
-    min-width: 40px;
-    height: 40px;
-    display: flex; align-items: center; justify-content: center;
-    background: var(--surface2);
-    border-radius: 8px;
-  }
-  .news-mini h4 {
-    font-family: 'Syne', sans-serif;
-    font-weight: 600;
-    font-size: 0.85rem;
-    margin-bottom: 4px;
-    line-height: 1.3;
-  }
-  .news-mini span { font-size: 0.72rem; color: var(--text3); font-family: 'Space Mono', monospace; }
+.pcard{
+  background:var(--surface);
+  border:1px solid var(--bdr2);
+  border-radius:10px;padding:24px;
+  text-align:center;
+  position:relative;overflow:hidden;
+  transition:all .45s cubic-bezier(.23,1,.32,1);
+  cursor:pointer;
+}
+.pcard::before{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--a3),var(--a1));
+  transform:scaleX(0);transition:transform .4s;
+}
+.pcard:hover::before{transform:scaleX(1);}
+.pcard:hover{transform:translateY(-5px);border-color:rgba(0,255,204,.2);box-shadow:0 20px 50px rgba(0,0,0,.4);}
+.pav{
+  width:64px;height:64px;border-radius:50%;
+  margin:0 auto 14px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#000;
+  position:relative;
+}
+.pav::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:1px solid rgba(0,255,204,.25);}
+.pname{font-weight:700;font-size:.88rem;margin-bottom:4px;}
+.prole{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--a1);margin-bottom:6px;letter-spacing:.5px;}
+.pdept{font-size:.73rem;color:var(--txt3);line-height:1.4;}
+.pexp{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px;justify-content:center;}
+.exptag{font-size:.58rem;font-family:'JetBrains Mono',monospace;background:rgba(0,255,204,.07);border:1px solid rgba(0,255,204,.14);color:var(--a1);padding:2px 7px;border-radius:2px;letter-spacing:.5px;}
 
-  /* ─── JOIN ─── */
-  #join { background: var(--bg); }
-  .join-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-    margin-bottom: 60px;
-  }
-  .join-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 36px;
-    transition: all 0.4s;
-    position: relative;
-    overflow: hidden;
-  }
-  .join-card.featured {
-    border-color: rgba(0,229,255,0.3);
-    background: linear-gradient(135deg, var(--surface), rgba(0,229,255,0.03));
-  }
-  .join-card.featured::before {
-    content: 'OPEN';
-    position: absolute; top: 20px; right: 20px;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.6rem;
-    color: var(--accent);
-    background: rgba(0,229,255,0.1);
-    border: 1px solid rgba(0,229,255,0.2);
-    padding: 3px 8px;
-    border-radius: 100px;
-  }
-  .join-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
-  .join-card h3 {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 1.1rem;
-    margin-bottom: 12px;
-  }
-  .join-card p { font-size: 0.88rem; color: var(--text2); line-height: 1.6; margin-bottom: 24px; }
-  .join-card ul {
-    list-style: none;
-    display: flex; flex-direction: column; gap: 8px;
-    margin-bottom: 28px;
-  }
-  .join-card ul li {
-    font-size: 0.82rem;
-    color: var(--text2);
-    display: flex; align-items: flex-start; gap: 8px;
-  }
-  .join-card ul li::before { content: '—'; color: var(--accent); }
+/* Advisor left-align variant */
+.pcard.adv{text-align:left;}
+.pcard.adv .pav{margin:0 0 16px 0;}
+.pcard.adv .pexp{justify-content:flex-start;}
 
-  /* ─── CONTACT ─── */
-  #contact { background: var(--bg2); }
-  .contact-grid {
-    display: grid;
-    grid-template-columns: 1fr 1.5fr;
-    gap: 60px;
-    align-items: start;
-  }
-  .contact-info h3 {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 1.4rem;
-    margin-bottom: 24px;
-  }
-  .contact-detail {
-    display: flex; align-items: flex-start; gap: 16px;
-    margin-bottom: 20px;
-  }
-  .cd-icon {
-    width: 40px; height: 40px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1rem;
-    flex-shrink: 0;
-  }
-  .cd-text strong {
-    display: block;
-    font-size: 0.8rem;
-    color: var(--accent);
-    font-family: 'Space Mono', monospace;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
-  }
-  .cd-text span { font-size: 0.88rem; color: var(--text2); }
+/* ══════════════════════════════════════════
+   PUBLICATIONS
+══════════════════════════════════════════ */
+#publications{background:var(--bg);}
+.pub-list{display:flex;flex-direction:column;gap:14px;}
+.pub{
+  background:var(--surface);
+  border:1px solid var(--bdr2);
+  border-radius:10px;
+  padding:clamp(18px,3vw,26px) clamp(18px,3vw,28px);
+  display:flex;gap:clamp(14px,3vw,28px);align-items:flex-start;
+  transition:all .4s cubic-bezier(.23,1,.32,1);
+  cursor:pointer;
+  position:relative;overflow:hidden;
+}
+.pub::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--a1);transform:scaleY(0);transition:transform .4s cubic-bezier(.23,1,.32,1);}
+.pub:hover::before{transform:scaleY(1);}
+.pub:hover{transform:translateX(6px);border-color:rgba(0,255,204,.22);box-shadow:-3px 0 0 var(--a1);}
+.pub-yr{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.72rem;color:var(--a1);
+  min-width:40px;padding-top:3px;
+  border-right:1px solid var(--bdr);
+  padding-right:clamp(14px,2.5vw,24px);
+  flex-shrink:0;
+}
+.pub-body{flex:1;min-width:0;}
+.pub-title{font-weight:700;font-size:clamp(.85rem,.9rem,1rem);margin-bottom:5px;line-height:1.4;}
+.pub-auth{font-size:.78rem;color:var(--txt2);margin-bottom:5px;}
+.pub-venue{font-size:.74rem;color:var(--txt3);font-style:italic;}
+.pub-badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;}
+.pb{font-family:'JetBrains Mono',monospace;font-size:.6rem;padding:3px 8px;border-radius:2px;letter-spacing:.5px;}
+.pb-conf{background:rgba(124,58,255,.15);color:#a87fff;border:1px solid rgba(124,58,255,.2);}
+.pb-jour{background:rgba(0,255,204,.07);color:var(--a1);border:1px solid rgba(0,255,204,.15);}
+.pb-award{background:rgba(255,149,0,.1);color:var(--a4);border:1px solid rgba(255,149,0,.2);}
+.pub-link{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--txt3);transition:color .3s;white-space:nowrap;flex-shrink:0;}
+.pub-link:hover{color:var(--a1);}
 
-  .contact-form {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 40px;
-    position: relative;
-    overflow: hidden;
-  }
-  .contact-form::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-  }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .form-group { margin-bottom: 20px; }
-  .form-group label {
-    display: block;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--text3);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-  .form-group input, .form-group select, .form-group textarea {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 12px 16px;
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
-    outline: none;
-    transition: all 0.3s;
-    resize: none;
-  }
-  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-    border-color: rgba(0,229,255,0.4);
-    box-shadow: 0 0 0 3px rgba(0,229,255,0.05);
-  }
-  .form-group input::placeholder, .form-group textarea::placeholder {
-    color: var(--text3);
-  }
-  .form-group select option { background: var(--bg2); }
-  .form-submit {
-    width: 100%;
-    background: var(--accent);
-    color: #000;
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 0.95rem;
-    padding: 14px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s;
-    letter-spacing: 0.5px;
-  }
-  .form-submit:hover {
-    background: #fff;
-    box-shadow: 0 10px 30px rgba(0,229,255,0.25);
-  }
+/* ══════════════════════════════════════════
+   NEWS
+══════════════════════════════════════════ */
+#news{background:var(--bg2);}
+.news-wrap{
+  display:grid;
+  grid-template-columns:3fr 2fr;
+gap:clamp(14px,2.5vw,22px);
+}
+@media(max-width:900px){.news-wrap{grid-template-columns:1fr;}}
 
-  /* ─── FOOTER ─── */
-  footer {
-    background: var(--bg);
-    border-top: 1px solid var(--border);
-    padding: 48px 60px 32px;
-  }
-  .footer-top {
-    display: flex; justify-content: space-between; align-items: flex-start;
-    margin-bottom: 48px;
-  }
-  .footer-brand .nav-logo { margin-bottom: 12px; }
-  .footer-brand p { font-size: 0.85rem; color: var(--text3); max-width: 300px; line-height: 1.6; }
-  .footer-links { display: flex; gap: 60px; }
-  .footer-col h4 {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--text3);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 16px;
-  }
-  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
-  .footer-col ul li a {
-    color: var(--text2);
-    text-decoration: none;
-    font-size: 0.85rem;
-    transition: color 0.3s;
-  }
-  .footer-col ul li a:hover { color: var(--accent); }
-  .footer-bottom {
-    border-top: 1px solid var(--border);
-    padding-top: 24px;
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .footer-bottom p { font-size: 0.78rem; color: var(--text3); font-family: 'Space Mono', monospace; }
-  .social-links { display: flex; gap: 12px; }
-  .social-link {
-    width: 36px; height: 36px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    text-decoration: none;
-    color: var(--text2);
-    font-size: 0.9rem;
-    transition: all 0.3s;
-  }
-  .social-link:hover {
-    border-color: rgba(0,229,255,0.3);
-    color: var(--accent);
-    transform: translateY(-2px);
-  }
+.nfeat{
+  background:var(--surface);
+  border:1px solid var(--bdr2);
+  border-radius:12px;overflow:hidden;
+  cursor:pointer;transition:all .45s cubic-bezier(.23,1,.32,1);
+}
+.nfeat:hover{border-color:rgba(0,255,204,.28);transform:translateY(-4px);box-shadow:0 24px 60px rgba(0,0,0,.4);}
+.nfeat-img{
+  height:clamp(160px,22vw,240px);
+  background:linear-gradient(135deg,var(--surface2),#081a2e);
+  display:flex;align-items:center;justify-content:center;
+  font-size:clamp(2.5rem,6vw,5rem);
+  position:relative;overflow:hidden;
+}
+.nfeat-img::before{
+  content:'';position:absolute;inset:0;
+  background:conic-gradient(from 0deg,rgba(0,255,204,.05),rgba(124,58,255,.08),rgba(255,51,102,.05),rgba(0,255,204,.05));
+  animation:rotateGrad 8s linear infinite;
+}
+@keyframes rotateGrad{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.nfeat-img::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(8,20,34,.9));}
+.nfeat-body{padding:clamp(18px,3vw,28px);}
+.ncat{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--a1);letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;}
+.nfeat h3{font-family:'Outfit',sans-serif;font-weight:700;font-size:clamp(1rem,2vw,1.25rem);margin-bottom:10px;line-height:1.35;}
+.nfeat p{font-size:.85rem;color:var(--txt2);line-height:1.65;}
+.ndate{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--txt3);margin-top:14px;}
 
-  /* ─── ANIMATIONS ─── */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+.nsidebar{display:flex;flex-direction:column;gap:12px;}
+.nmini{
+  background:var(--surface);
+  border:1px solid var(--bdr2);
+  border-radius:10px;padding:16px 18px;
+  display:flex;gap:14px;align-items:flex-start;
+  cursor:pointer;transition:all .35s;
+}
+.nmini:hover{border-color:rgba(0,255,204,.2);transform:translateX(5px);}
+.nmini-ico{
+  width:36px;height:36px;flex-shrink:0;
+  background:var(--surface2);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+}
+.nmini h4{font-weight:600;font-size:.82rem;margin-bottom:3px;line-height:1.35;}
+.nmini span{font-family:'JetBrains Mono',monospace;font-size:.64rem;color:var(--txt3);}
 
-  .reveal {
-    opacity: 0;
-    transform: translateY(40px);
-    transition: opacity 0.7s cubic-bezier(0.23, 1, 0.32, 1), transform 0.7s cubic-bezier(0.23, 1, 0.32, 1);
-  }
-  .reveal.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* ══════════════════════════════════════════
+   JOIN
+══════════════════════════════════════════ */
+#join{background:var(--bg);}
+.join-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:clamp(14px,2.5vw,24px);
+}
+@media(max-width:900px){.join-grid{grid-template-columns:1fr;}}
 
-  /* ─── COUNTER ANIMATION ─── */
-  .count-num { display: inline-block; }
+.jcard{
+  background:var(--surface);
+  border:1px solid var(--bdr2);
+  border-radius:12px;padding:clamp(24px,4vw,40px);
+  position:relative;overflow:hidden;
+  transition:all .5s cubic-bezier(.23,1,.32,1);
+}
+.jcard.hot{border-color:rgba(0,255,204,.3);background:linear-gradient(145deg,var(--surface),rgba(0,255,204,.03));}
+.jcard.hot::after{
+  content:'NOW OPEN';position:absolute;top:20px;right:20px;
+  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  color:var(--a1);background:rgba(0,255,204,.1);
+  border:1px solid rgba(0,255,204,.2);padding:4px 10px;
+  border-radius:2px;letter-spacing:1.5px;
+}
+.jcard:hover{transform:translateY(-6px);box-shadow:0 28px 70px rgba(0,0,0,.5);}
+.jcard h3{font-family:'Outfit',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:12px;}
+.jcard p{font-size:.86rem;color:var(--txt2);line-height:1.65;margin-bottom:22px;}
+.jcard ul{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:28px;}
+.jcard ul li{font-size:.82rem;color:var(--txt2);display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--bdr2);}
+.jcard ul li:last-child{border-bottom:none;}
+.jcard ul li::before{content:'→';color:var(--a1);flex-shrink:0;}
 
-  /* ─── TYPED ─── */
-  .typed-cursor {
-    display: inline-block;
-    width: 3px;
-    background: var(--accent);
-    animation: blink 1s infinite;
-    margin-left: 4px;
-    vertical-align: baseline;
-  }
-  @keyframes blink {
-    0%,50% { opacity: 1; }
-    51%,100% { opacity: 0; }
-  }
+/* ══════════════════════════════════════════
+   CONTACT
+══════════════════════════════════════════ */
+#contact{background:var(--bg2);}
+.contact-wrap{
+  display:grid;
+  grid-template-columns:1fr 1.6fr;
+  gap:clamp(30px,6vw,80px);
+  align-items:start;
+}
+@media(max-width:900px){.contact-wrap{grid-template-columns:1fr;}}
 
-  /* ─── MOBILE NAV ─── */
-  .mobile-menu {
-    display: none;
-    position: fixed;
-    inset: 70px 0 0 0;
-    background: rgba(5,10,15,0.97);
-    backdrop-filter: blur(20px);
-    z-index: 999;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 32px;
-    border-top: 1px solid var(--border);
-  }
-  .mobile-menu.open { display: flex; }
-  .mobile-menu a {
-    color: var(--text);
-    text-decoration: none;
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 1.5rem;
-    transition: color 0.3s;
-  }
-  .mobile-menu a:hover { color: var(--accent); }
+.cinfo p{font-size:.9rem;color:var(--txt2);line-height:1.75;margin-bottom:32px;}
+.cdet{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px;}
+.cdet-ico{
+  width:40px;height:40px;flex-shrink:0;
+  background:var(--surface);border:1px solid var(--bdr);
+  border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.95rem;
+  transition:all .3s;
+}
+.cdet:hover .cdet-ico{background:rgba(0,255,204,.08);border-color:rgba(0,255,204,.25);}
+.cdet strong{display:block;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--a1);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+.cdet span{font-size:.86rem;color:var(--txt2);}
 
-  /* ─── RESPONSIVE ─── */
-  @media (max-width: 900px) {
-    section { padding: 80px 24px; }
-    #hero { padding: 100px 24px 60px; }
-    nav { padding: 0 24px; }
-    footer { padding: 48px 24px 32px; }
-    .about-grid { grid-template-columns: 1fr; }
-    .research-grid { grid-template-columns: repeat(2, 1fr); }
-    .exec-grid { grid-template-columns: repeat(2, 1fr); }
-    .advisor-grid { grid-template-columns: 1fr; }
-    .member-grid { grid-template-columns: repeat(3, 1fr); }
-    .news-grid { grid-template-columns: 1fr; }
-    .join-grid { grid-template-columns: 1fr; }
-    .contact-grid { grid-template-columns: 1fr; }
-    .footer-top { flex-direction: column; gap: 40px; }
-    .footer-links { gap: 32px; flex-wrap: wrap; }
-    .nav-links { display: none; }
-    .hamburger { display: flex; }
-    .hero-stats { gap: 32px; }
-    .form-row { grid-template-columns: 1fr; }
-    .scroll-indicator { display: none; }
-  }
-  @media (max-width: 600px) {
-    .research-grid { grid-template-columns: 1fr; }
-    .exec-grid { grid-template-columns: 1fr; }
-    .member-grid { grid-template-columns: repeat(2, 1fr); }
-    .footer-bottom { flex-direction: column; gap: 16px; text-align: center; }
-  }
+.cform{
+  background:var(--surface);
+  border:1px solid var(--bdr);
+  border-radius:12px;padding:clamp(24px,4vw,42px);
+  position:relative;overflow:hidden;
+}
+.cform::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--a1),var(--a3),var(--a2));}
 
-  /* ─── COUNTER STRIP ─── */
-  .counter-strip {
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    padding: 40px 60px;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-  }
-  .cs-item { text-align: center; }
-  .cs-num {
-    font-family: 'Space Mono', monospace;
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--accent);
-    display: block;
-  }
-  .cs-label {
-    font-size: 0.78rem;
-    color: var(--text3);
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    font-family: 'Space Mono', monospace;
-  }
-  @media (max-width: 900px) {
-    .counter-strip { grid-template-columns: repeat(2,1fr); padding: 40px 24px; }
-  }
+/* glowing top bar animation */
+.cform::after{
+  content:'';position:absolute;top:0;left:-100%;width:100%;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);
+  animation:shimmerBar 3s 1s ease-in-out infinite;
+}
+@keyframes shimmerBar{0%{left:-100%}100%{left:200%}}
+
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:560px){.frow{grid-template-columns:1fr;}}
+.fg{margin-bottom:18px;}
+.fg label{display:block;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--txt3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7px;}
+.fg input,.fg select,.fg textarea{
+  width:100%;background:var(--bg);
+  border:1px solid var(--bdr);border-radius:6px;
+  padding:12px 16px;color:var(--txt);
+  font-family:'Outfit',sans-serif;font-size:.88rem;
+  outline:none;resize:none;
+  transition:border-color .3s,box-shadow .3s;
+}
+.fg input:focus,.fg select:focus,.fg textarea:focus{
+  border-color:rgba(0,255,204,.4);
+  box-shadow:0 0 0 3px rgba(0,255,204,.05),0 0 20px rgba(0,255,204,.08);
+}
+.fg input::placeholder,.fg textarea::placeholder{color:var(--txt3);}
+.fg select option{background:var(--bg2);}
+.fsub{
+  width:100%;background:var(--a1);color:#000;
+  font-family:'JetBrains Mono',monospace;font-weight:700;
+  font-size:.82rem;padding:14px;border:none;
+  border-radius:6px;cursor:pointer;letter-spacing:2px;
+  text-transform:uppercase;transition:all .35s;
+  position:relative;overflow:hidden;
+}
+.fsub::before{content:'';position:absolute;inset:0;background:linear-gradient(120deg,transparent,rgba(255,255,255,.3),transparent);transform:translateX(-100%);transition:transform .5s;}
+.fsub:hover::before{transform:translateX(100%);}
+.fsub:hover{background:#fff;box-shadow:0 12px 40px rgba(0,255,204,.3);}
+
+/* ══════════════════════════════════════════
+   COUNTER BAND
+══════════════════════════════════════════ */
+.cband{
+  background:var(--surface);
+  border-top:1px solid var(--bdr);
+  border-bottom:1px solid var(--bdr);
+  padding:clamp(28px,5vw,50px) clamp(20px,6vw,100px);
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:20px;position:relative;z-index:2;
+}
+@media(max-width:768px){.cband{grid-template-columns:repeat(2,1fr);}}
+.cbi{text-align:center;}
+.cbi-n{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(2rem,5vw,3.5rem);
+  color:var(--a1);display:block;letter-spacing:2px;
+  text-shadow:0 0 40px rgba(0,255,204,.35);
+}
+.cbi-l{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--txt3);letter-spacing:2px;text-transform:uppercase;margin-top:4px;display:block;}
+
+/* ══════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════ */
+footer{
+  background:var(--bg);
+  border-top:1px solid var(--bdr);
+  padding:clamp(40px,6vw,70px) clamp(20px,6vw,100px) clamp(24px,4vw,36px);
+  position:relative;z-index:2;
+}
+.foot-top{
+  display:grid;
+  grid-template-columns:1.5fr 1fr 1fr 1fr;
+  gap:clamp(24px,4vw,60px);
+  margin-bottom:clamp(32px,5vw,56px);
+}
+@media(max-width:900px){.foot-top{grid-template-columns:1fr 1fr;}}
+@media(max-width:560px){.foot-top{grid-template-columns:1fr;}}
+
+.foot-brand .nav-brand{margin-bottom:14px;font-size:1rem;}
+.foot-brand p{font-size:.82rem;color:var(--txt3);line-height:1.65;}
+.foot-col h5{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--txt3);letter-spacing:2.5px;text-transform:uppercase;margin-bottom:16px;}
+.foot-col ul{list-style:none;display:flex;flex-direction:column;gap:10px;}
+.foot-col ul li a{font-size:.82rem;color:var(--txt2);transition:color .3s;}
+.foot-col ul li a:hover{color:var(--a1);}
+
+.foot-bot{
+  border-top:1px solid var(--bdr);
+  padding-top:clamp(18px,3vw,26px);
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:14px;
+}
+.foot-bot p{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--txt3);}
+.socials{display:flex;gap:10px;}
+.soc{
+  width:36px;height:36px;
+  background:var(--surface);border:1px solid var(--bdr2);
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  color:var(--txt2);font-size:.85rem;transition:all .3s;
+}
+.soc:hover{border-color:rgba(0,255,204,.3);color:var(--a1);transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,255,204,.15);}
+
+/* ══════════════════════════════════════════
+   GLITCH ACCENT LINES
+══════════════════════════════════════════ */
+.scanlines{
+  position:fixed;inset:0;pointer-events:none;z-index:3;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);
+}
+
+/* ══════════════════════════════════════════
+   TYPED CURSOR
+══════════════════════════════════════════ */
+.tcur{
+  display:inline-block;width:3px;
+  background:var(--a1);
+  animation:tcurBlink 1s step-end infinite;
+  vertical-align:baseline;margin-left:2px;
+}
+@keyframes tcurBlink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ══════════════════════════════════════════
+   FLOATING ELEMENTS
+══════════════════════════════════════════ */
+.float-el{
+  position:absolute;pointer-events:none;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.6rem;color:var(--a1);
+  opacity:.12;letter-spacing:2px;
+  animation:floatUp 15s linear infinite;
+}
+@keyframes floatUp{from{opacity:0;transform:translateY(100px)}20%{opacity:.12}80%{opacity:.12}to{opacity:0;transform:translateY(-200px)}}
+
+/* ══════════════════════════════════════════
+   GLOWING ORBS
+══════════════════════════════════════════ */
+.orb{
+  position:absolute;border-radius:50%;
+  filter:blur(100px);pointer-events:none;
+}
+.orb1{width:600px;height:600px;background:rgba(0,255,204,.06);top:-200px;right:-200px;animation:orbFloat1 12s ease-in-out infinite;}
+.orb2{width:400px;height:400px;background:rgba(124,58,255,.07);bottom:-100px;left:-100px;animation:orbFloat2 14s ease-in-out infinite;}
+.orb3{width:300px;height:300px;background:rgba(255,51,102,.05);top:40%;left:40%;animation:orbFloat3 10s ease-in-out infinite;}
+@keyframes orbFloat1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-40px,30px) scale(1.1)}}
+@keyframes orbFloat2{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-40px)}}
+@keyframes orbFloat3{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.15)}}
+
+/* ══════════════════════════════════════════
+   MOBILE NAV PADDING
+══════════════════════════════════════════ */
+@media(max-width:900px){
+  .nav-links,.nav-cta{display:none;}
+  .ham{display:flex;}
+}
+@media(min-width:901px){.mob-drawer{display:none!important;}}
+
+/* ══════════════════════════════════════════
+   LOADING SCREEN
+══════════════════════════════════════════ */
+#loader{
+  position:fixed;inset:0;
+  background:var(--bg);
+  z-index:99999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:20px;
+  transition:opacity .6s ease, visibility .6s;
+}
+#loader.done{opacity:0;visibility:hidden;}
+.loader-logo{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:3rem;letter-spacing:8px;
+  color:var(--a1);
+  animation:glitch 1.5s step-end infinite;
+}
+@keyframes glitch{
+  0%,100%{text-shadow:0 0 20px rgba(0,255,204,.6),0 0 40px rgba(0,255,204,.3);}
+  20%{text-shadow:-2px 0 var(--a2),2px 0 var(--a3);}
+40%{text-shadow:2px 0 var(--a2),-2px 0 var(--a3);}
+  60%{text-shadow:0 0 20px rgba(0,255,204,.6);}
+}
+.loader-bar{
+  width:200px;height:2px;background:var(--surface2);border-radius:2px;overflow:hidden;
+}
+.loader-fill{
+  height:100%;background:linear-gradient(90deg,var(--a1),var(--a3));
+  animation:loadFill 1.8s ease-in-out forwards;
+}
+@keyframes loadFill{from{width:0}to{width:100%}}
+.loader-txt{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--txt3);letter-spacing:3px;text-transform:uppercase;}
 </style>
 </head>
 <body>
 
-<div class="cursor" id="cursor"></div>
-<div class="cursor-ring" id="cursorRing"></div>
-<div class="grid-bg"></div>
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-logo">AIML·BD</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+  <div class="loader-txt">Launching site...</div>
+</div>
+
+<!-- CANVAS -->
+<canvas id="bgCanvas"></canvas>
+<div class="noise"></div>
+<div class="scanlines"></div>
+
+<!-- CURSOR -->
+<div class="cur" id="cur"></div>
+<div class="cur-ring" id="curRing"></div>
 
 <!-- NAV -->
-<nav id="navbar">
-  <div class="nav-logo">
-    <div class="dot"></div>
-    AI & ML·BD
+<nav id="nav">
+  <div class="nav-brand">
+    <div class="brand-dot"></div>
+    AIML·RESEARCH·BD
   </div>
   <ul class="nav-links">
     <li><a href="#about">About</a></li>
     <li><a href="#research">Research</a></li>
     <li><a href="#people">People</a></li>
-    <li><a href="#publications">Publications</a></li>
+    <li><a href="#publications">Papers</a></li>
     <li><a href="#news">News</a></li>
-    <li><a href="#join">Join Us</a></li>
-    <li><a href="#contact">Contact</a></li>
+    <li><a href="#join">Join</a></li>
   </ul>
-  <button class="hamburger" id="hamburger" aria-label="Menu">
-    <span></span><span></span><span></span>
-  </button>
+  <div class="nav-right">
+    <a href="#contact" class="btn-glow nav-cta" style="padding:8px 18px;font-size:.7rem;letter-spacing:1px;">Contact Us</a>
+    <button class="ham" id="ham" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
 </nav>
 
-<!-- Mobile Menu -->
-<div class="mobile-menu" id="mobileMenu">
-  <a href="#about" onclick="closeMobile()">About</a>
-  <a href="#research" onclick="closeMobile()">Research</a>
-  <a href="#people" onclick="closeMobile()">People</a>
-  <a href="#publications" onclick="closeMobile()">Publications</a>
-  <a href="#news" onclick="closeMobile()">News</a>
-  <a href="#join" onclick="closeMobile()">Join Us</a>
-  <a href="#contact" onclick="closeMobile()">Contact</a>
+<!-- MOBILE DRAWER -->
+<div class="mob-drawer" id="drawer">
+  <a href="#about" class="dlink">About</a>
+  <a href="#research" class="dlink">Research</a>
+  <a href="#people" class="dlink">People</a>
+  <a href="#publications" class="dlink">Papers</a>
+  <a href="#news" class="dlink">News</a>
+  <a href="#join" class="dlink">Join Us</a>
+  <a href="#contact" class="dlink">Contact</a>
 </div>
 
 <!-- HERO -->
 <section id="hero">
-  <div class="hero-orb hero-orb-1"></div>
-  <div class="hero-orb hero-orb-2"></div>
-  <div class="hero-content">
-    <div class="hero-badge">ESTABLISHED 2026 —  BANGLADESH</div>
-    <h1 class="hero-title">
-      <span class="line-accent">AI & ML</span><br>
-      Research Lab<span id="typed-text"></span><span class="typed-cursor"></span><br>
-      <span class="line-dim">Bangladesh</span>
-    </h1>
-    <p class="hero-sub">
-      Advancing the frontiers of Artificial Intelligence and Machine Learning research 
-      to solve real-world challenges in Bangladesh and beyond.
-    </p>
-    <div class="hero-cta">
-      <a href="#research" class="btn-primary">Explore Research →</a>
-      <a href="#join" class="btn-outline">Join Our Lab</a>
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+
+  <!-- floating code bits -->
+  <span class="float-el" style="left:70%;top:30%;animation-delay:0s;">01001000</span>
+  <span class="float-el" style="left:80%;top:60%;animation-delay:3s;">GRADIENT</span>
+  <span class="float-el" style="left:15%;top:70%;animation-delay:6s;">LOSS=0.012</span>
+  <span class="float-el" style="left:55%;top:20%;animation-delay:9s;">EPOCH[247]</span>
+
+  <div class="hero-kicker">
+    <div class="hero-kicker-dot"></div>
+    Established 2024 &nbsp;·&nbsp; Dhaka, Bangladesh
+  </div>
+
+  <h1 class="hero-h1">
+    <span class="grad">AI &amp; ML</span>
+  </h1>
+  <div class="hero-h1-sub">RESEARCH LAB</div>
+
+  <p class="hero-desc">
+    Advancing the frontiers of Artificial Intelligence and Machine Learning research — building intelligent systems that address real-world challenges across Bangladesh and South Asia.
+  </p>
+
+  <div class="hero-btns">
+    <a href="#research" class="btn-glow">Explore Research <span>→</span></a>
+    <a href="#join" class="btn-ghost">Join Our Lab <span>↗</span></a>
+  </div>
+
+  <div class="hero-stats">
+    <div>
+      <span class="hstat-num" data-target="12">0</span>
+      <span class="hstat-lbl">Researchers</span>
     </div>
-    <div class="hero-stats">
-      <div class="stat-item">
-        <span class="stat-num" data-target="12">0</span>
-        <span class="stat-label">Researchers</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-num" data-target="8">0</span>
-        <span class="stat-label">Advisors</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-num" data-target="24">0</span>
-        <span class="stat-label">Publications</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-num" data-target="6">0</span>
-        <span class="stat-label">Active Projects</span>
-      </div>
+    <div>
+      <span class="hstat-num" data-target="8">0</span>
+      <span class="hstat-lbl">Advisors</span>
+    </div>
+    <div>
+      <span class="hstat-num" data-target="24">0</span>
+      <span class="hstat-lbl">Publications</span>
+    </div>
+    <div>
+      <span class="hstat-num" data-target="6">0</span>
+      <span class="hstat-lbl">Active Projects</span>
     </div>
   </div>
-  <div class="scroll-indicator">
-    <div class="scroll-line"></div>
-    Scroll to Explore
+
+  <div class="scroll-cue">
+    <div class="scroll-line-vert"></div>
+    Scroll
   </div>
 </section>
 
-<!-- COUNTER STRIP -->
-<div class="counter-strip">
-  <div class="cs-item reveal">
-    <span class="cs-num">NLP</span>
-    <span class="cs-label">Natural Language Processing</span>
-  </div>
-  <div class="cs-item reveal">
-    <span class="cs-num">CV</span>
-    <span class="cs-label">Computer Vision</span>
-  </div>
-  <div class="cs-item reveal">
-    <span class="cs-num">RL</span>
-    <span class="cs-label">Reinforcement Learning</span>
-  </div>
-  <div class="cs-item reveal">
-    <span class="cs-num">XAI</span>
-    <span class="cs-label">Explainable AI</span>
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-track">
+    <span class="ticker-item">NLP<span class="ticker-sep"></span></span>
+    <span class="ticker-item">COMPUTER VISION<span class="ticker-sep"></span></span>
+<span class="ticker-item">HEALTHCARE AI<span class="ticker-sep"></span></span>
+    <span class="ticker-item">BANGLA LANGUAGE AI<span class="ticker-sep"></span></span>
+    <span class="ticker-item">REINFORCEMENT LEARNING<span class="ticker-sep"></span></span>
+    <span class="ticker-item">EXPLAINABLE AI<span class="ticker-sep"></span></span>
+    <span class="ticker-item">AGRICULTURAL INTELLIGENCE<span class="ticker-sep"></span></span>
+    <span class="ticker-item">FEDERATED LEARNING<span class="ticker-sep"></span></span>
+    <!-- Duplicate for seamless loop -->
+    <span class="ticker-item">NLP<span class="ticker-sep"></span></span>
+    <span class="ticker-item">COMPUTER VISION<span class="ticker-sep"></span></span>
+    <span class="ticker-item">HEALTHCARE AI<span class="ticker-sep"></span></span>
+    <span class="ticker-item">BANGLA LANGUAGE AI<span class="ticker-sep"></span></span>
+    <span class="ticker-item">REINFORCEMENT LEARNING<span class="ticker-sep"></span></span>
+    <span class="ticker-item">EXPLAINABLE AI<span class="ticker-sep"></span></span>
+    <span class="ticker-item">AGRICULTURAL INTELLIGENCE<span class="ticker-sep"></span></span>
+    <span class="ticker-item">FEDERATED LEARNING<span class="ticker-sep"></span></span>
   </div>
 </div>
 
 <!-- ABOUT -->
 <section id="about">
-  <div class="about-grid">
-    <div class="about-text reveal">
-      <span class="section-tag">// About the Lab</span>
-      <h2 class="section-title">Pioneering AI Research<br>in South Asia</h2>
-      <p>
-        AI &amp; ML Research Lab Bangladesh is an independent, interdisciplinary research 
-        institute dedicated to advancing artificial intelligence and machine learning 
-        research with a focus on applications relevant to the South Asian context.
-      </p>
-      <p>
-        Founded by a team of passionate researchers, professors, and industry experts, 
-        our lab bridges the gap between cutting-edge academic research and real-world 
-        deployment in healthcare, agriculture, education, and governance.
-      </p>
-      <ul class="value-list">
-        <li>Open, reproducible, and collaborative research culture</li>
-        <li>Strong ties with industry partners and government bodies</li>
-        <li>Dedicated mentorship for emerging Bangladeshi AI researchers</li>
-        <li>Focus on low-resource and multilingual AI for Bangla language</li>
-        <li>International conference participation and publication support</li>
+  <div class="about-wrap">
+    <div class="about-text">
+      <span class="sec-label rv">// 01. About the Lab</span>
+      <h2 class="sec-title rv">Pioneering<br>AI Research</h2>
+      <p class="rv">AI &amp; ML Research Lab Bangladesh is an independent, interdisciplinary research institute dedicated to advancing artificial intelligence and machine learning research with focus on applications for the South Asian context.</p>
+      <p class="rv">Founded by passionate researchers, professors, and industry experts, our lab bridges the gap between cutting-edge academic research and real-world deployment in healthcare, agriculture, education, and governance.</p>
+      <ul class="val-list">
+        <li class="rv"><span class="vi">◆</span>Open, reproducible, and collaborative research culture</li>
+        <li class="rv"><span class="vi">◆</span>Strong ties with industry partners and government bodies</li>
+        <li class="rv"><span class="vi">◆</span>Dedicated mentorship for emerging Bangladeshi AI researchers</li>
+        <li class="rv"><span class="vi">◆</span>Focus on low-resource and multilingual AI for Bangla language</li>
+        <li class="rv"><span class="vi">◆</span>International conference participation and publication support</li>
       </ul>
     </div>
-    <div class="about-visual reveal">
-      <div class="about-box">
-        <div class="mission-card">
-          <h4>🎯 Mission</h4>
-          <p>To conduct world-class AI &amp; ML research that addresses the unique challenges of Bangladesh, while training the next generation of AI leaders.</p>
-        </div>
-        <div class="mission-card">
-          <h4>👁 Vision</h4>
-          <p>To become the leading AI research hub in South Asia, contributing to global knowledge while driving local innovation and technological sovereignty.</p>
-        </div>
-        <div class="mission-card">
-          <h4>⚡ Focus Areas</h4>
-          <p>Bangla NLP, Crop Disease Detection, Healthcare AI, Climate Modeling, Educational Technology, and Responsible AI Governance.</p>
-        </div>
+    <div class="about-cards">
+      <div class="mcard rv">
+        <div class="mcard-icon">🎯</div>
+        <h4>Mission</h4>
+        <p>To conduct world-class AI &amp; ML research that addresses the unique challenges of Bangladesh, while training the next generation of AI leaders.</p>
+      </div>
+      <div class="mcard rv">
+        <div class="mcard-icon">👁</div>
+        <h4>Vision</h4>
+        <p>To become the leading AI research hub in South Asia, contributing to global knowledge while driving local innovation and technological sovereignty.</p>
+      </div>
+      <div class="mcard rv">
+        <div class="mcard-icon">⚡</div>
+        <h4>Focus Areas</h4>
+        <p>Bangla NLP, Crop Disease Detection, Healthcare AI, Climate Modeling, Educational Technology, and Responsible AI Governance.</p>
       </div>
     </div>
   </div>
 </section>
 
+<!-- COUNTER BAND -->
+<div class="cband">
+  <div class="cbi rv"><span class="cbi-n" data-ct="48">0</span><span class="cbi-l">Papers Published</span></div>
+  <div class="cbi rv"><span class="cbi-n" data-ct="12">0</span><span class="cbi-l">Active Researchers</span></div>
+  <div class="cbi rv"><span class="cbi-n" data-ct="8">0</span><span class="cbi-l">Faculty Advisors</span></div>
+  <div class="cbi rv"><span class="cbi-n" data-ct="6">0</span><span class="cbi-l">Live Projects</span></div>
+</div>
+
 <!-- RESEARCH -->
 <section id="research">
-  <span class="section-tag reveal">// Research Areas</span>
-  <h2 class="section-title reveal">What We Investigate</h2>
-  <p class="section-sub reveal">Our research spans multiple domains of AI and ML, from foundational theory to applied systems.</p>
+  <span class="sec-label rv">// 02. Research Areas</span>
+  <h2 class="sec-title rv">What We<br>Investigate</h2>
+<p class="sec-sub rv">Spanning multiple domains of AI and ML, from foundational theory to applied systems that matter.</p>
   <div class="research-grid">
-    <div class="research-card reveal">
-      <div class="rc-icon">🗣️</div>
-      <div class="rc-title">Natural Language Processing</div>
-      <div class="rc-desc">Bangla language models, sentiment analysis, machine translation, named entity recognition, and low-resource language AI for South Asian languages.</div>
-      <span class="rc-tag">NLP · LLM · Bangla AI</span>
+    <div class="rcard rv">
+      <div class="rcard-num">01</div>
+      <div class="rcard-icon">🗣️</div>
+      <div class="rcard-title">Natural Language Processing</div>
+      <div class="rcard-desc">Bangla language models, sentiment analysis, machine translation, named entity recognition, and low-resource language AI for South Asian languages.</div>
+      <div class="rcard-tags"><span class="rtag">NLP</span><span class="rtag">LLM</span><span class="rtag">BANGLA AI</span></div>
     </div>
-    <div class="research-card reveal">
-      <div class="rc-icon">👁️</div>
-      <div class="rc-title">Computer Vision</div>
-      <div class="rc-desc">Object detection, image segmentation, medical image analysis, satellite imagery processing, and real-time video understanding systems.</div>
-      <span class="rc-tag">CV · Detection · Segmentation</span>
+    <div class="rcard rv">
+      <div class="rcard-num">02</div>
+      <div class="rcard-icon">👁️</div>
+      <div class="rcard-title">Computer Vision</div>
+      <div class="rcard-desc">Object detection, image segmentation, medical image analysis, satellite imagery processing, and real-time video understanding systems.</div>
+      <div class="rcard-tags"><span class="rtag">CV</span><span class="rtag">DETECTION</span><span class="rtag">SEGMENTATION</span></div>
     </div>
-    <div class="research-card reveal">
-      <div class="rc-icon">🏥</div>
-      <div class="rc-title">Healthcare AI</div>
-      <div class="rc-desc">Disease prediction, clinical decision support, diagnostic imaging AI, drug discovery, and patient data privacy with federated learning.</div>
-      <span class="rc-tag">HealthAI · Diagnostics · FL</span>
+    <div class="rcard rv">
+      <div class="rcard-num">03</div>
+      <div class="rcard-icon">🏥</div>
+      <div class="rcard-title">Healthcare AI</div>
+      <div class="rcard-desc">Disease prediction, clinical decision support, diagnostic imaging AI, drug discovery, and patient data privacy with federated learning.</div>
+      <div class="rcard-tags"><span class="rtag">HEALTH AI</span><span class="rtag">DIAGNOSTICS</span><span class="rtag">FL</span></div>
     </div>
-    <div class="research-card reveal">
-      <div class="rc-icon">🌾</div>
-      <div class="rc-title">Agricultural Intelligence</div>
-      <div class="rc-desc">Crop disease detection, yield prediction, smart irrigation, pest recognition, and precision agriculture using drone imagery and IoT sensors.</div>
-      <span class="rc-tag">AgriAI · Smart Farming</span>
+    <div class="rcard rv">
+      <div class="rcard-num">04</div>
+      <div class="rcard-icon">🌾</div>
+      <div class="rcard-title">Agricultural Intelligence</div>
+      <div class="rcard-desc">Crop disease detection, yield prediction, smart irrigation, pest recognition, and precision agriculture using drone imagery and IoT sensors.</div>
+      <div class="rcard-tags"><span class="rtag">AGRI AI</span><span class="rtag">SMART FARMING</span><span class="rtag">IOT</span></div>
     </div>
-    <div class="research-card reveal">
-      <div class="rc-icon">🔍</div>
-      <div class="rc-title">Explainable AI (XAI)</div>
-      <div class="rc-desc">Building transparent and interpretable machine learning models, fairness-aware algorithms, and tools for AI auditing and accountability.</div>
-      <span class="rc-tag">XAI · Fairness · Trust</span>
+    <div class="rcard rv">
+      <div class="rcard-num">05</div>
+      <div class="rcard-icon">🔍</div>
+      <div class="rcard-title">Explainable AI</div>
+      <div class="rcard-desc">Building transparent and interpretable machine learning models, fairness-aware algorithms, and tools for AI auditing and accountability.</div>
+      <div class="rcard-tags"><span class="rtag">XAI</span><span class="rtag">FAIRNESS</span><span class="rtag">TRUST</span></div>
     </div>
-    <div class="research-card reveal">
-      <div class="rc-icon">🤖</div>
-      <div class="rc-title">Reinforcement Learning</div>
-      <div class="rc-desc">Multi-agent systems, robotics control, game-playing agents, optimization problems, and real-world RL deployment challenges.</div>
-      <span class="rc-tag">RL · Robotics · Optimization</span>
+    <div class="rcard rv">
+      <div class="rcard-num">06</div>
+      <div class="rcard-icon">🤖</div>
+      <div class="rcard-title">Reinforcement Learning</div>
+      <div class="rcard-desc">Multi-agent systems, robotics control, game-playing agents, optimization problems, and real-world RL deployment challenges.</div>
+      <div class="rcard-tags"><span class="rtag">RL</span><span class="rtag">ROBOTICS</span><span class="rtag">OPTIMIZATION</span></div>
     </div>
   </div>
 </section>
 
 <!-- PEOPLE -->
 <section id="people">
-  <span class="section-tag reveal">// Our Team</span>
-  <h2 class="section-title reveal">The People Behind the Research</h2>
-  <p class="section-sub reveal">Our lab is composed of distinguished professors, dedicated researchers, and talented students working together.</p>
+  <span class="sec-label rv">// 03. Our Team</span>
+  <h2 class="sec-title rv">People Behind<br>the Research</h2>
+  <p class="sec-sub rv">Distinguished professors, dedicated researchers, and talented students working together toward a shared vision.</p>
 
-  <div class="people-tabs reveal">
-    <button class="tab-btn active" onclick="switchTab('exec')">Executive Body</button>
-    <button class="tab-btn" onclick="switchTab('advisor')">Faculty Advisors</button>
-    <button class="tab-btn" onclick="switchTab('members')">Researchers</button>
+  <div class="tabs-row rv">
+    <button class="tab on" onclick="switchTab('exec',this)">Executive Body</button>
+    <button class="tab" onclick="switchTab('adv',this)">Faculty Advisors</button>
+    <button class="tab" onclick="switchTab('mem',this)">Researchers</button>
   </div>
 
-  <!-- Executive Body -->
-  <div class="tab-content active exec-grid" id="tab-exec">
-    <div class="person-card reveal">
-      <div class="person-avatar" style="background: linear-gradient(135deg, #00e5ff, #0090a8);">AR</div>
-      <div class="person-name">Coming soon....</div>
-      <div class="person-role">Director</div>
-      <div class="person-dept">BSc. on ......<br>CU</div>
-    </div>
-    <div class="person-card reveal">
-      <div class="person-avatar" style="background: linear-gradient(135deg, #7b2fff, #4a1a99);">SH</div>
-      <div class="person-name">Coming soon...</div>
-      <div class="person-role">Co-Director</div>
-      <div class="person-dept">BSc. on .......<br>BUET</div>
-    </div>
-    <div class="person-card reveal">
-      <div class="person-avatar" style="background: linear-gradient(135deg, #ff6b35, #cc4400);">MK</div>
-      <div class="person-name">Coming soon......</div>
-      <div class="person-role">Research Director</div>
-      <div class="person-dept">BSc. on ........<br>IUT</div>
-    </div>
-    <div class="person-card reveal">
-      <div class="person-avatar" style="background: linear-gradient(135deg, #00e5ff, #7b2fff);">FN</div>
-      <div class="person-name">Coming soon....</div>
-      <div class="person-role">Operations Head</div>
-      <div class="person-dept">BSc. on....<br>BRAC</div>
-    </div>
+  <div class="tab-panel on exec-g" id="tp-exec">
+    <div class="pcard rv"><div class="pav" style="background:linear-gradient(135deg,#00ffcc,#009980)">AR</div><div class="pname">Dr. Arif Rahman</div><div class="prole">Director</div><div class="pdept">PhD, CS · BUET</div></div>
+    <div class="pcard rv"><div class="pav" style="background:linear-gradient(135deg,#7c3aff,#4a1a99)">SH</div><div class="pname">Dr.
+Sumaiya Haque</div><div class="prole">Co-Director</div><div class="pdept">PhD, AI Research · DU</div></div>
+    <div class="pcard rv"><div class="pav" style="background:linear-gradient(135deg,#ff3366,#aa1144)">MK</div><div class="pname">Md. Karim Islam</div><div class="prole">Research Director</div><div class="pdept">MS, ML · IUT</div></div>
+    <div class="pcard rv"><div class="pav" style="background:linear-gradient(135deg,#ff9500,#cc6600)">FN</div><div class="pname">Fatema Noor</div><div class="prole">Operations Head</div><div class="pdept">MS, Data Science · NSU</div></div>
   </div>
 
-  <!-- Advisors -->
-  <div class="tab-content advisor-grid" id="tab-advisor">
-    <div class="advisor-card reveal">
-      <div class="person-card" style="text-align:left;">
-        <div class="person-avatar" style="background: linear-gradient(135deg,#00e5ff,#0070a0); margin:0 0 16px 0; width:72px;height:72px;font-size:1.4rem;">MA</div>
-        <div class="person-name">Prof. Dr. Mohammad Ali</div>
-        <div class="person-role">Senior Advisor</div>
-        <div class="person-dept">Professor of CSE, BUET</div>
-        <div class="advisor-expertise">
-          <span class="expertise-tag">NLP</span>
-          <span class="expertise-tag">Deep Learning</span>
-          <span class="expertise-tag">Bangla AI</span>
-        </div>
-      </div>
-    </div>
-    <div class="advisor-card reveal">
-      <div class="person-card" style="text-align:left;">
-        <div class="person-avatar" style="background: linear-gradient(135deg,#7b2fff,#4a00cc); margin:0 0 16px 0; width:72px;height:72px;font-size:1.4rem;">RB</div>
-        <div class="person-name">Prof. Dr. Rifat Begum</div>
-        <div class="person-role">Research Advisor</div>
-        <div class="person-dept">Professor of EEE, DU</div>
-        <div class="advisor-expertise">
-          <span class="expertise-tag">Computer Vision</span>
-          <span class="expertise-tag">Signal Processing</span>
-        </div>
-      </div>
-    </div>
-    <div class="advisor-card reveal">
-      <div class="person-card" style="text-align:left;">
-        <div class="person-avatar" style="background: linear-gradient(135deg,#ff6b35,#cc4000); margin:0 0 16px 0; width:72px;height:72px;font-size:1.4rem;">TH</div>
-        <div class="person-name">Prof. Dr. Tarek Hossain</div>
-        <div class="person-role">Industry Advisor</div>
-        <div class="person-dept">Professor of CSE, RUET</div>
-        <div class="advisor-expertise">
-          <span class="expertise-tag">Healthcare AI</span>
-          <span class="expertise-tag">Bioinformatics</span>
-          <span class="expertise-tag">XAI</span>
-        </div>
-      </div>
-    </div>
+  <div class="tab-panel adv-g" id="tp-adv">
+    <div class="pcard adv rv"><div class="pav" style="background:linear-gradient(135deg,#00ffcc,#0080aa);width:72px;height:72px;font-size:1.5rem;">MA</div><div class="pname">Prof. Dr. Mohammad Ali</div><div class="prole">Senior Advisor</div><div class="pdept">Professor of CSE, BUET</div><div class="pexp"><span class="exptag">NLP</span><span class="exptag">Deep Learning</span><span class="exptag">Bangla AI</span></div></div>
+    <div class="pcard adv rv"><div class="pav" style="background:linear-gradient(135deg,#7c3aff,#4a00cc);width:72px;height:72px;font-size:1.5rem;">RB</div><div class="pname">Prof. Dr. Rifat Begum</div><div class="prole">Research Advisor</div><div class="pdept">Professor of EEE, DU</div><div class="pexp"><span class="exptag">Computer Vision</span><span class="exptag">Signal Processing</span></div></div>
+    <div class="pcard adv rv"><div class="pav" style="background:linear-gradient(135deg,#ff3366,#cc0033);width:72px;height:72px;font-size:1.5rem;">TH</div><div class="pname">Prof. Dr. Tarek Hossain</div><div class="prole">Industry Advisor</div><div class="pdept">Professor of CSE, RUET</div><div class="pexp"><span class="exptag">Healthcare AI</span><span class="exptag">Bioinformatics</span><span class="exptag">XAI</span></div></div>
   </div>
 
-  <!-- Members -->
-  <div class="tab-content member-grid" id="tab-members">
-    <div class="person-card reveal" style="padding:20px;">
-      <div class="person-avatar" style="background: linear-gradient(135deg,#00e5ff,#005f80); width:54px;height:54px;font-size:1.1rem;">RH</div>
-      <div class="person-name" style="font-size:0.82rem;">Rafiq Hasan</div>
-      <div class="person-role" style="font-size:0.65rem;">PhD Researcher</div>
-      <div class="person-dept" style="font-size:0.7rem;">NLP</div>
-    </div>
-    <div class="person-card reveal" style="padding:20px;">
-      <div class="person-avatar" style="background: linear-gradient(135deg,#7b2fff,#3a0099); width:54px;height:54px;font-size:1.1rem;">NA</div>
-      <div class="person-name" style="font-size:0.82rem;">Nadia Akter</div>
-      <div class="person-role" style="font-size:0.65rem;">MS Researcher</div>
-      <div class="person-dept" style="font-size:0.7rem;">Computer Vision</div>
-    </div>
-    <div class="person-card reveal" style="padding:20px;">
-      <div class="person-avatar" style="background: linear-gradient(135deg,#ff6b35,#aa3300); width:54px;height:54px;font-size:1.1rem;">SI</div>
-      <div class="person-name" style="font-size:0.82rem;">Sabbir Islam</div>
-      <div class="person-role" style="font-size:0.65rem;">Research Assistant</div>
-      <div class="person-dept" style="font-size:0.7rem;">Healthcare AI</div>
-    </div>
-    <div class="person-card reveal" style="padding:20px;">
-      <div class="person-avatar" style="background: linear-gradient(135deg,#00e5ff,#7b2fff); width:54px;height:54px;font-size:1.1rem;">MJ</div>
-      <div class="person-name" style="font-size:0.82rem;">Mitu Jahan</div>
-      <div class="person-role" style="font-size:0.65rem;">PhD Researcher</div>
-      <div class="person-dept" style="font-size:0.7rem;">AgriAI</div>
-    </div>
-    <div class="person-card reveal" style="padding:20px;">
-      <div class="person-avatar" style="background: linear-gradient(135deg,#00c49a,#006644); width:54px;height:54px;font-size:1.1rem;">AR</div>
-      <div class="person-name" style="font-size:0.82rem;">Alim Reza</div>
-      <div class="person-role" style="font-size:0.65rem;">Research Intern</div>
-      <div class="person-dept" style="font-size:0.7rem;">RL</div>
-    </div>
+  <div class="tab-panel mem-g" id="tp-mem">
+    <div class="pcard rv" style="padding:16px;"><div class="pav" style="background:linear-gradient(135deg,#00ffcc,#005f80);width:50px;height:50px;font-size:.95rem;">RH</div><div class="pname" style="font-size:.78rem;">Rafiq Hasan</div><div class="prole" style="font-size:.6rem;">PhD Researcher</div><div class="pdept" style="font-size:.67rem;">NLP</div></div>
+    <div class="pcard rv" style="padding:16px;"><div class="pav" style="background:linear-gradient(135deg,#7c3aff,#3a0099);width:50px;height:50px;font-size:.95rem;">NA</div><div class="pname" style="font-size:.78rem;">Nadia Akter</div><div class="prole" style="font-size:.6rem;">MS Researcher</div><div class="pdept" style="font-size:.67rem;">CV</div></div>
+    <div class="pcard rv" style="padding:16px;"><div class="pav" style="background:linear-gradient(135deg,#ff3366,#aa2200);width:50px;height:50px;font-size:.95rem;">SI</div><div class="pname" style="font-size:.78rem;">Sabbir Islam</div><div class="prole" style="font-size:.6rem;">Research Asst.</div><div class="pdept" style="font-size:.67rem;">Healthcare AI</div></div>
+    <div class="pcard rv" style="padding:16px;"><div class="pav" style="background:linear-gradient(135deg,#00ffcc,#7c3aff);width:50px;height:50px;font-size:.95rem;">MJ</div><div class="pname" style="font-size:.78rem;">Mitu Jahan</div><div class="prole" style="font-size:.6rem;">PhD Researcher</div><div class="pdept" style="font-size:.67rem;">AgriAI</div></div>
+    <div class="pcard rv" style="padding:16px;"><div class="pav" style="background:linear-gradient(135deg,#00cc88,#005533);width:50px;height:50px;font-size:.95rem;">AR</div><div class="pname" style="font-size:.78rem;">Alim Reza</div><div class="prole" style="font-size:.6rem;">Intern</div><div class="pdept" style="font-size:.67rem;">RL</div></div>
   </div>
 </section>
 
 <!-- PUBLICATIONS -->
 <section id="publications">
-  <span class="section-tag reveal">// Publications</span>
-  <h2 class="section-title reveal">Recent Research Output</h2>
-  <p class="section-sub reveal">Peer-reviewed papers, conference proceedings, and technical reports from our lab.</p>
+  <span class="sec-label rv">// 04. Publications</span>
+  <h2 class="sec-title rv">Research Output</h2>
+  <p class="sec-sub rv">Peer-reviewed papers, conference proceedings, and technical reports from our lab.</p>
   <div class="pub-list">
-    <div class="pub-item reveal">
-      <div class="pub-year">2024</div>
-      <div class="pub-info">
+<div class="pub rv">
+      <div class="pub-yr">2024</div>
+      <div class="pub-body">
         <div class="pub-title">BanglaBERT-XL: A Large-Scale Pretrained Language Model for Bangla with Enhanced Low-Resource Capabilities</div>
-        <div class="pub-authors">Arif Rahman, Sumaiya Haque, Rafiq Hasan, Mohammad Ali</div>
+        <div class="pub-auth">Arif Rahman, Sumaiya Haque, Rafiq Hasan, Mohammad Ali</div>
         <div class="pub-venue">Proceedings of ACL 2024 — Association for Computational Linguistics</div>
-        <div class="pub-badges">
-          <span class="pub-badge badge-conf">ACL 2024</span>
-          <span class="pub-badge badge-award">🏆 Best Paper</span>
-        </div>
+        <div class="pub-badges"><span class="pb pb-conf">ACL 2024</span><span class="pb pb-award">🏆 Best Paper</span></div>
       </div>
       <a href="#" class="pub-link">PDF ↗</a>
     </div>
-    <div class="pub-item reveal">
-      <div class="pub-year">2024</div>
-      <div class="pub-info">
+    <div class="pub rv">
+      <div class="pub-yr">2024</div>
+      <div class="pub-body">
         <div class="pub-title">CropScan: Real-Time Crop Disease Detection Using Lightweight CNN on Edge Devices in Bangladesh</div>
-        <div class="pub-authors">Mitu Jahan, Karim Islam, Tarek Hossain</div>
+        <div class="pub-auth">Mitu Jahan, Karim Islam, Tarek Hossain</div>
         <div class="pub-venue">IEEE Transactions on AgriInformatics — Vol. 3, Issue 2</div>
-        <div class="pub-badges">
-          <span class="pub-badge badge-journal">Journal</span>
-        </div>
+        <div class="pub-badges"><span class="pb pb-jour">Journal</span></div>
       </div>
       <a href="#" class="pub-link">PDF ↗</a>
     </div>
-    <div class="pub-item reveal">
-      <div class="pub-year">2024</div>
-      <div class="pub-info">
+    <div class="pub rv">
+      <div class="pub-yr">2024</div>
+      <div class="pub-body">
         <div class="pub-title">Federated Learning for Privacy-Preserving Patient Data Analysis in Resource-Constrained Bangladeshi Hospitals</div>
-        <div class="pub-authors">Sabbir Islam, Rifat Begum, Sumaiya Haque</div>
+        <div class="pub-auth">Sabbir Islam, Rifat Begum, Sumaiya Haque</div>
         <div class="pub-venue">NeurIPS 2024 Workshop on Healthcare AI</div>
-        <div class="pub-badges">
-          <span class="pub-badge badge-conf">NeurIPS 2024</span>
-        </div>
+        <div class="pub-badges"><span class="pb pb-conf">NeurIPS 2024</span></div>
       </div>
       <a href="#" class="pub-link">PDF ↗</a>
     </div>
-    <div class="pub-item reveal">
-      <div class="pub-year">2023</div>
-      <div class="pub-info">
+    <div class="pub rv">
+      <div class="pub-yr">2023</div>
+      <div class="pub-body">
         <div class="pub-title">Explainability Metrics for Deep Learning Models in High-Stakes Decision Making: A Survey</div>
-        <div class="pub-authors">Nadia Akter, Arif Rahman, Mohammad Ali</div>
+        <div class="pub-auth">Nadia Akter, Arif Rahman, Mohammad Ali</div>
         <div class="pub-venue">ACM Computing Surveys — Vol. 56, Issue 4</div>
-        <div class="pub-badges">
-          <span class="pub-badge badge-journal">Journal</span>
-        </div>
+        <div class="pub-badges"><span class="pb pb-jour">Journal</span></div>
       </div>
       <a href="#" class="pub-link">PDF ↗</a>
     </div>
   </div>
-  <div style="text-align:center; margin-top:40px;">
-    <a href="#" class="btn-outline">View All Publications →</a>
+  <div style="text-align:center;margin-top:36px;">
+    <a href="#" class="btn-ghost" style="display:inline-flex;">View All Publications →</a>
   </div>
 </section>
 
 <!-- NEWS -->
 <section id="news">
-  <span class="section-tag reveal">// News & Events</span>
-  <h2 class="section-title reveal">Latest from the Lab</h2>
-  <p class="section-sub reveal">Announcements, events, achievements, and media coverage.</p>
-  <div class="news-grid">
-    <div class="news-featured reveal">
-      <div class="news-featured-img">🤖</div>
-      <div class="news-featured-body">
-        <div class="news-cat">Workshop</div>
+  <span class="sec-label rv">// 05. News &amp; Events</span>
+  <h2 class="sec-title rv">Latest from<br>the Lab</h2>
+  <p class="sec-sub rv">Announcements, events, achievements, and media coverage.</p>
+  <div class="news-wrap">
+    <div class="nfeat rv">
+      <div class="nfeat-img">🤖</div>
+      <div class="nfeat-body">
+        <div class="ncat">Workshop</div>
         <h3>International Workshop on Bangla NLP at BUET — Registration Now Open</h3>
         <p>Join leading researchers from Bangladesh, India, and Europe for a two-day intensive workshop covering the latest advances in Bangla language AI, from tokenization to large language models.</p>
-        <div class="news-date">📅 March 15–16, 2025 · BUET, Dhaka</div>
+        <div class="ndate">📅 March 15–16, 2025 · BUET, Dhaka</div>
       </div>
     </div>
-    <div class="news-sidebar">
-      <div class="news-mini reveal">
-        <div class="news-mini-icon">🏆</div>
-        <div>
-          <h4>BanglaBERT-XL wins Best Paper at ACL 2024</h4>
-          <span>December 2024</span>
-        </div>
-      </div>
-      <div class="news-mini reveal">
-        <div class="news-mini-icon">🤝</div>
-        <div>
-          <h4>Partnership signed with Bangladesh Agriculture Research Institute</h4>
-          <span>November 2024</span>
-        </div>
-      </div>
-      <div class="news-mini reveal">
-        <div class="news-mini-icon">📢</div>
-        <div>
-          <h4>Lab featured in The Daily Star's Tech supplement</h4>
-          <span>October 2024</span>
-        </div>
-      </div>
-      <div class="news-mini reveal">
-        <div class="news-mini-icon">🎓</div>
-        <div>
-          <h4>3 PhD scholarships awarded to lab researchers</h4>
-          <span>September 2024</span>
-        </div>
-      </div>
+    <div class="nsidebar">
+      <div class="nmini rv"><div class="nmini-ico">🏆</div><div><h4>BanglaBERT-XL wins Best Paper at ACL 2024</h4><span>December 2024</span></div></div>
+      <div class="nmini rv"><div class="nmini-ico">🤝</div><div><h4>Partnership signed with Bangladesh Agriculture Research Institute</h4><span>November 2024</span></div></div>
+      <div class="nmini rv"><div class="nmini-ico">📢</div><div><h4>Lab featured in The Daily Star Tech supplement</h4><span>October 2024</span></div></div>
+      <div class="nmini rv"><div class="nmini-ico">🎓</div><div><h4>3 PhD scholarships awarded to lab researchers</h4><span>September 2024</span></div></div>
     </div>
   </div>
 </section>
 
 <!-- JOIN -->
 <section id="join">
-  <span class="section-tag reveal">// Opportunities</span>
-  <h2 class="section-title reveal">Join Our Research Community</h2>
-  <p class="section-sub reveal">We welcome talented individuals passionate about AI and ML to contribute to our mission.</p>
+  <span class="sec-label rv">// 06. Opportunities</span>
+  <h2 class="sec-title rv">Join Our<br>Community</h2>
+<p class="sec-sub rv">We welcome talented individuals passionate about AI and ML to contribute to our mission.</p>
   <div class="join-grid">
-    <div class="join-card featured reveal">
+    <div class="jcard hot rv">
       <h3>🎓 PhD Fellowship</h3>
-      <p>Fully-funded PhD positions for exceptional candidates working on AI research with real-world impact.</p>
+      <p>Fully-funded PhD positions for exceptional candidates working on AI research with real-world impact in Bangladesh.</p>
       <ul>
         <li>Monthly stipend + research funding</li>
         <li>International conference travel grants</li>
         <li>Co-supervision with top professors</li>
         <li>Industry collaboration opportunities</li>
       </ul>
-      <a href="#contact" class="btn-primary">Apply Now →</a>
+      <a href="#contact" class="btn-glow" style="font-size:.72rem;padding:13px 28px;">Apply Now →</a>
     </div>
-    <div class="join-card reveal">
+    <div class="jcard rv">
       <h3>💻 Research Internship</h3>
       <p>Summer and semester-long research internships for undergraduate and graduate students.</p>
       <ul>
@@ -1536,295 +1236,268 @@
         <li>Publication opportunity</li>
         <li>Mentorship from senior researchers</li>
       </ul>
-      <a href="#contact" class="btn-outline">Apply Now →</a>
+      <a href="#contact" class="btn-ghost" style="font-size:.72rem;padding:12px 28px;display:inline-flex;">Apply Now →</a>
     </div>
-    <div class="join-card reveal">
+    <div class="jcard rv">
       <h3>🤝 Collaboration</h3>
-      <p>We welcome collaborations with universities, industry partners, and government bodies.</p>
+      <p>We welcome collaborations with universities, industry partners, and government bodies across South Asia.</p>
       <ul>
         <li>Joint research projects</li>
         <li>Dataset &amp; resource sharing</li>
         <li>Workshop co-organization</li>
-        <li>Consulting &amp; advisory</li>
+        <li>Consulting &amp; advisory roles</li>
       </ul>
-      <a href="#contact" class="btn-outline">Get in Touch →</a>
+      <a href="#contact" class="btn-ghost" style="font-size:.72rem;padding:12px 28px;display:inline-flex;">Get in Touch →</a>
     </div>
   </div>
 </section>
 
 <!-- CONTACT -->
 <section id="contact">
-  <div class="contact-grid">
-    <div class="contact-info reveal">
-      <span class="section-tag">// Contact</span>
-      <h2 class="section-title">Get In Touch</h2>
-      <p style="color:var(--text2); font-size:0.95rem; line-height:1.7; margin-bottom:36px;">
-        Have questions about our research, collaboration opportunities, or admission? We'd love to hear from you.
-      </p>
-      <div class="contact-detail">
-        <div class="cd-icon">📍</div>
-        <div class="cd-text">
-          <strong>Address</strong>
-          <span>AI &amp; ML Research Lab Bangladesh<br>Dhaka, Bangladesh</span>
-        </div>
-      </div>
-      <div class="contact-detail">
-        <div class="cd-icon">✉️</div>
-        <div class="cd-text">
-          <strong>Email</strong>
-          <span>info@aiml-lab.bd</span>
-        </div>
-      </div>
-      <div class="contact-detail">
-        <div class="cd-icon">📞</div>
-        <div class="cd-text">
-          <strong>Phone</strong>
-          <span>+880 1XXX-XXXXXX</span>
-        </div>
-      </div>
-      <div class="contact-detail">
-        <div class="cd-icon">🕐</div>
-        <div class="cd-text">
-          <strong>Office Hours</strong>
-          <span>Sun–Thu: 9:00 AM – 5:00 PM</span>
-        </div>
-      </div>
+  <div class="contact-wrap">
+    <div class="cinfo rv">
+      <span class="sec-label">// 07. Contact</span>
+      <h2 class="sec-title">Get In<br>Touch</h2>
+      <p>Have questions about research, collaboration opportunities, or admission? We would love to hear from you.</p>
+      <div class="cdet"><div class="cdet-ico">📍</div><div><strong>Address</strong><span>AI &amp; ML Research Lab Bangladesh<br>Dhaka, Bangladesh</span></div></div>
+      <div class="cdet"><div class="cdet-ico">✉️</div><div><strong>Email</strong><span>info@aiml-lab.bd</span></div></div>
+      <div class="cdet"><div class="cdet-ico">📞</div><div><strong>Phone</strong><span>+880 1XXX-XXXXXX</span></div></div>
+      <div class="cdet"><div class="cdet-ico">🕐</div><div><strong>Office Hours</strong><span>Sun–Thu: 9:00 AM – 5:00 PM</span></div></div>
     </div>
-    <div class="contact-form reveal">
-      <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1.2rem; margin-bottom:28px;">Send a Message</h3>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Full Name</label>
-          <input type="text" placeholder="Your name">
-        </div>
-        <div class="form-group">
-          <label>Email Address</label>
-          <input type="email" placeholder="you@email.com">
-        </div>
+    <div class="cform rv">
+      <h3 style="font-family:'Outfit',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:24px;">Send a Message</h3>
+      <div class="frow">
+        <div class="fg"><label>Full Name</label><input type="text" placeholder="Your name"></div>
+        <div class="fg"><label>Email</label><input type="email" placeholder="you@email.com"></div>
       </div>
-      <div class="form-group">
-        <label>Subject</label>
-        <select>
-          <option value="">Select a topic...</option>
-          <option>Research Collaboration</option>
-          <option>PhD Application</option>
-          <option>Internship Inquiry</option>
-          <option>General Question</option>
-          <option>Media / Press</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Message</label>
-        <textarea rows="5" placeholder="Tell us about your inquiry..."></textarea>
-      </div>
-      <button class="form-submit" onclick="handleSubmit(this)">Send Message →</button>
+      <div class="fg"><label>Subject</label><select><option value="">Select topic...</option><option>Research Collaboration</option><option>PhD Application</option><option>Internship Inquiry</option><option>General Question</option><option>Media / Press</option></select></div>
+      <div class="fg"><label>Message</label><textarea rows="5" placeholder="Tell us about your inquiry..."></textarea></div>
+      <button class="fsub" onclick="handleSend(this)">Send Message →</button>
     </div>
   </div>
 </section>
 
 <!-- FOOTER -->
 <footer>
-  <div class="footer-top">
-    <div class="footer-brand">
-      <div class="nav-logo" style="margin-bottom:12px;">
-        <div class="dot"></div>
-        AI &amp; ML Research Lab Bangladesh
-      </div>
+  <div class="foot-top">
+    <div class="foot-brand">
+      <div class="nav-brand" style="font-size:.85rem;"><div class="brand-dot"></div>AI &amp; ML Research Lab Bangladesh</div>
       <p>Advancing AI research for a better Bangladesh and a smarter world. Open, collaborative, impactful.</p>
     </div>
-    <div class="footer-links">
-      <div class="footer-col">
-        <h4>Lab</h4>
-        <ul>
-          <li><a href="#about">About</a></li>
-          <li><a href="#research">Research</a></li>
-          <li><a href="#people">Team</a></li>
-          <li><a href="#publications">Publications</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Engage</h4>
-        <ul>
-          <li><a href="#news">News</a></li>
-          <li><a href="#join">Join Us</a></li>
-          <li><a href="#contact">Contact</a></li>
-          <li><a href="#">GitHub</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Resources</h4>
-        <ul>
-          <li><a href="#">Datasets</a></li>
-          <li><a href="#">Open Source</a></li>
-          <li><a href="#">Blog</a></li>
-          <li><a href="#">Press Kit</a></li>
-        </ul>
-      </div>
-    </div>
+    <div class="foot-col"><h5>Lab</h5><ul><li><a href="#about">About</a></li><li><a href="#research">Research</a></li><li><a href="#people">Team</a></li><li><a href="#publications">Publications</a></li></ul></div>
+<div class="foot-col"><h5>Engage</h5><ul><li><a href="#news">News</a></li><li><a href="#join">Join Us</a></li><li><a href="#contact">Contact</a></li><li><a href="#">GitHub</a></li></ul></div>
+    <div class="foot-col"><h5>Resources</h5><ul><li><a href="#">Datasets</a></li><li><a href="#">Open Source</a></li><li><a href="#">Blog</a></li><li><a href="#">Press Kit</a></li></ul></div>
   </div>
-  <div class="footer-bottom">
+  <div class="foot-bot">
     <p>© 2024 AI &amp; ML Research Lab Bangladesh. All rights reserved.</p>
-    <div class="social-links">
-      <a href="#" class="social-link" title="GitHub">⌥</a>
-      <a href="#" class="social-link" title="Twitter">𝕏</a>
-      <a href="#" class="social-link" title="LinkedIn">in</a>
-      <a href="#" class="social-link" title="ResearchGate">R</a>
+    <div class="socials">
+      <a href="#" class="soc" title="GitHub">⌥</a>
+      <a href="#" class="soc" title="X">𝕏</a>
+      <a href="#" class="soc" title="LinkedIn">in</a>
+      <a href="#" class="soc" title="ResearchGate">R</a>
     </div>
   </div>
 </footer>
 
 <script>
-// ─── Custom Cursor ───
-const cursor = document.getElementById('cursor');
-const ring = document.getElementById('cursorRing');
+/* ─── LOADER ─── */
+function hideLoader(){
+  const el = document.getElementById('loader');
+  if (el) el.classList.add('done');
+}
+document.addEventListener('DOMContentLoaded', () => { setTimeout(hideLoader, 700); });
+window.addEventListener('load', () => { setTimeout(hideLoader, 900); });
+
+/* ─── CURSOR ─── */
+const cur = document.getElementById('cur');
+const curRing = document.getElementById('curRing');
 let mx = 0, my = 0, rx = 0, ry = 0;
-document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; cursor.style.left = mx + 'px'; cursor.style.top = my + 'px'; });
-function animRing() {
-  rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
-  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
-  requestAnimationFrame(animRing);
+if (window.innerWidth > 768) {
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cur.style.left = mx + 'px'; cur.style.top = my + 'px';
+  });
+  (function loopRing() {
+    rx += (mx - rx) * 0.1; ry += (my - ry) * 0.1;
+    curRing.style.left = rx + 'px'; curRing.style.top = ry + 'px';
+    requestAnimationFrame(loopRing);
+  })();
+  document.querySelectorAll('a,button,.rcard,.pcard,.pub,.nmini,.nfeat,.jcard').forEach(el => {
+    el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+    el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+  });
 }
-animRing();
-document.querySelectorAll('a, button, .research-card, .person-card, .pub-item, .news-mini, .news-featured').forEach(el => {
-  el.addEventListener('mouseenter', () => { cursor.style.width = '20px'; cursor.style.height = '20px'; cursor.style.background = '#fff'; ring.style.width = '50px'; ring.style.height = '50px'; });
-  el.addEventListener('mouseleave', () => { cursor.style.width = '12px'; cursor.style.height = '12px'; cursor.style.background = 'var(--accent)'; ring.style.width = '36px'; ring.style.height = '36px'; });
-});
 
-// ─── Navbar Scroll ───
-const nav = document.getElementById('navbar');
+/* ─── NAV SHRINK ─── */
+const nav = document.getElementById('nav');
 window.addEventListener('scroll', () => {
-  nav.classList.toggle('scrolled', window.scrollY > 50);
+  nav.classList.toggle('shrunk', window.scrollY > 60);
 });
 
-// ─── Hamburger ───
-const burger = document.getElementById('hamburger');
-const mMenu = document.getElementById('mobileMenu');
-burger.addEventListener('click', () => { mMenu.classList.toggle('open'); });
-function closeMobile() { mMenu.classList.remove('open'); }
+/* ─── HAMBURGER ─── */
+const ham = document.getElementById('ham');
+const drawer = document.getElementById('drawer');
+ham.addEventListener('click', () => {
+  ham.classList.toggle('open');
+  drawer.classList.toggle('open');
+});
+document.querySelectorAll('.dlink').forEach(a => {
+  a.addEventListener('click', () => {
+    ham.classList.remove('open');
+    drawer.classList.remove('open');
+  });
+});
 
-// ─── Typed Text ───
-const phrases = [' — Bangladesh', ' — ভবিষ্যৎ', ' — Innovation', ' — BanglaAI'];
-let pi = 0, ci = 0, del = false;
-const el = document.getElementById('typed-text');
-function type() {
-  const phrase = phrases[pi];
-  if (!del) { el.textContent = phrase.slice(0, ++ci); if (ci === phrase.length) { del = true; setTimeout(type, 1800); return; } }
-  else { el.textContent = phrase.slice(0, --ci); if (ci === 0) { del = false; pi = (pi + 1) % phrases.length; } }
-  setTimeout(type, del ? 40 : 80);
-}
-setTimeout(type, 1200);
-
-// ─── Scroll Reveal ───
-const revealEls = document.querySelectorAll('.reveal');
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach((entry, i) => {
-    if (entry.isIntersecting) {
-      setTimeout(() => entry.target.classList.add('visible'), i * 60);
+/* ─── SCROLL REVEAL ─── */
+const rvObs = new IntersectionObserver(entries => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('in'), i * 70);
     }
   });
-}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-revealEls.forEach(el => observer.observe(el));
+}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+document.querySelectorAll('.rv,.rv2').forEach(el => rvObs.observe(el));
 
-// ─── Counter Animation ───
-function animateCounter(el, target, duration = 2000) {
-  let start = 0;
-  const step = target / (duration / 16);
-  const timer = setInterval(() => {
-    start = Math.min(start + step, target);
-    el.textContent = Math.floor(start) + (target > 10 ? '+' : '');
-    if (start >= target) clearInterval(timer);
+/* ─── COUNTER ANIMATION ─── */
+function animNum(el, target, suffix = '') {
+  let v = 0;
+  const step = target / (1800 / 16);
+  const t = setInterval(() => {
+    v = Math.min(v + step, target);
+    el.textContent = Math.floor(v) + suffix;
+    if (v >= target) clearInterval(t);
   }, 16);
 }
-const counterEls = document.querySelectorAll('[data-target]');
-const counterObs = new IntersectionObserver(entries => {
+const ctObs = new IntersectionObserver(entries => {
   entries.forEach(e => {
     if (e.isIntersecting) {
-      animateCounter(e.target, parseInt(e.target.dataset.target));
-      counterObs.unobserve(e.target);
+      const t = parseInt(e.target.dataset.target || e.target.dataset.ct || 0);
+      const suffix = t > 10 ? '+' : '';
+      animNum(e.target, t, suffix);
+      ctObs.unobserve(e.target);
     }
   });
 }, { threshold: 0.5 });
-counterEls.forEach(el => counterObs.observe(el));
+document.querySelectorAll('[data-target],[data-ct]').forEach(el => ctObs.observe(el));
 
-// ─── Tabs ───
-function switchTab(id) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.getElementById('tab-' + id).classList.add('active');
-  event.target.classList.add('active');
-  // re-trigger reveal for new content
-  document.querySelectorAll('#tab-' + id + ' .reveal').forEach((el, i) => {
-    el.classList.remove('visible');
-    setTimeout(() => el.classList.add('visible'), i * 80 + 50);
+/* ─── TABS ─── */
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on');
+  const panel = document.getElementById('tp-' + id);
+  panel.classList.add('on');
+  panel.querySelectorAll('.rv').forEach((el, i) => {
+    el.classList.remove('in');
+    setTimeout(() => el.classList.add('in'), i * 80 + 50);
   });
 }
 
-// ─── Form Submit ───
-function handleSubmit(btn) {
+/* ─── FORM ─── */
+function handleSend(btn) {
   btn.textContent = 'Sending...';
-  btn.style.background = 'rgba(0,229,255,0.3)';
-  btn.style.color = 'var(--accent)';
-  setTimeout(() => {
-    btn.textContent = '✓ Message Sent!';
-    btn.style.background = 'rgba(0,229,255,0.15)';
-  }, 1500);
-  setTimeout(() => {
-    btn.textContent = 'Send Message →';
-    btn.style.background = 'var(--accent)';
-    btn.style.color = '#000';
-  }, 4000);
+  btn.style.background = 'rgba(0,255,204,.2)'; btn.style.color = 'var(--a1)';
+  setTimeout(() => { btn.textContent = '✓ Message Sent!'; }, 1600);
+  setTimeout(() => { btn.textContent = 'Send Message →'; btn.style.background = 'var(--a1)'; btn.style.color = '#000'; }, 2800);
 }
 
-// ─── Particle Canvas ───
-const canvas = document.createElement('canvas');
-canvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:1;opacity:0.4;';
-document.body.appendChild(canvas);
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+/* ─── RESEARCH CARD SPOTLIGHT ─── */
+document.querySelectorAll('.rcard').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width * 100).toFixed(1);
+    const y = ((e.clientY - r.top) / r.height * 100).toFixed(1);
+    card.style.setProperty('--mx', x + '%');
+    card.style.setProperty('--my', y + '%');
+  });
+});
 
-const particles = Array.from({length: 60}, () => ({
+/* ─── CANVAS PARTICLE NETWORK ─── */
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resize();
+window.addEventListener('resize', resize);
+
+const DOTS = window.innerWidth < 768 ? 24 : 40;
+const dots = Array.from({ length: DOTS }, () => ({
   x: Math.random() * canvas.width,
   y: Math.random() * canvas.height,
-  r: Math.random() * 1.5 + 0.5,
-  vx: (Math.random() - 0.5) * 0.3,
-  vy: (Math.random() - 0.5) * 0.3,
-  alpha: Math.random() * 0.5 + 0.1
+  vx: (Math.random() - .5) * .35,
+  vy: (Math.random() - .5) * .35,
+  r: Math.random() * 1.8 + .4,
+  a: Math.random() * .55 + .1,
+  pulse: Math.random() * Math.PI * 2,
 }));
 
-function drawParticles() {
+let mouseX = canvas.width / 2, mouseY = canvas.height / 2;
+window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+
+function drawCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  particles.forEach(p => {
-    p.x += p.vx; p.y += p.vy;
-    if (p.x < 0) p.x = canvas.width;
-    if (p.x > canvas.width) p.x = 0;
-    if (p.y < 0) p.y = canvas.height;
-    if (p.y > canvas.height) p.y = 0;
+
+  // Mouse repel + attract
+  dots.forEach(d => {
+    const dx = d.x - mouseX, dy = d.y - mouseY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 0 && dist < 140) {
+      const force = (140 - dist) / 140 * .6;
+      d.vx += (dx / dist) * force * .08;
+      d.vy += (dy / dist) * force * .08;
+    }
+    d.vx *= .98; d.vy *= .98;
+    d.x += d.vx; d.y += d.vy;
+    if (d.x < 0) d.x = canvas.width;
+    if (d.x > canvas.width) d.x = 0;
+    if (d.y < 0) d.y = canvas.height;
+    if (d.y > canvas.height) d.y = 0;
+    d.pulse += .02;
+
+    const alpha = d.a * (.7 + .3 * Math.sin(d.pulse));
     ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(0,229,255,${p.alpha})`;
+    ctx.arc(d.x, d.y, d.r + .5 * Math.sin(d.pulse), 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(0,255,204,${alpha})`;
     ctx.fill();
   });
-  // Draw lines between close particles
-  for (let i = 0; i < particles.length; i++) {
-    for (let j = i + 1; j < particles.length; j++) {
-      const dx = particles[i].x - particles[j].x;
-      const dy = particles[i].y - particles[j].y;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-      if (dist < 120) {
+
+  // Lines
+  for (let i = 0; i < dots.length; i++) {
+    for (let j = i + 1; j < dots.length; j++) {
+      const dx = dots[i].x - dots[j].x;
+      const dy = dots[i].y - dots[j].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 130) {
+        const a = .09 * (1 - dist / 130);
         ctx.beginPath();
-        ctx.moveTo(particles[i].x, particles[i].y);
-        ctx.lineTo(particles[j].x, particles[j].y);
-        ctx.strokeStyle = `rgba(0,229,255,${0.06 * (1 - dist/120)})`;
-        ctx.lineWidth = 0.5;
+        ctx.moveTo(dots[i].x, dots[i].y);
+        ctx.lineTo(dots[j].x, dots[j].y);
+        ctx.strokeStyle = `rgba(0,255,204,${a})`;
+        ctx.lineWidth = .6;
         ctx.stroke();
       }
     }
   }
-  requestAnimationFrame(drawParticles);
+
+  // Mouse glow
+  const grd = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 160);
+  grd.addColorStop(0, 'rgba(0,255,204,0.04)');
+  grd.addColorStop(1, 'transparent');
+  ctx.beginPath();
+  ctx.arc(mouseX, mouseY, 160, 0, Math.PI * 2);
+  ctx.fillStyle = grd;
+  ctx.fill();
+
+  requestAnimationFrame(drawCanvas);
 }
-drawParticles();
+if (!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) { drawCanvas(); }
+
+/* ─── TYPED HERO GLITCH ─── */
+// subtle glitch on hero title on interval
+const heroTitle = document.querySelector('.hero-h1 .grad');
+setInterval(() => {
+  heroTitle.style.textShadow = `${Math.random()*4-2}px 0 var(--a2), ${Math.random()*-4+2}px 0 var(--a3)`;
+  setTimeout(() => heroTitle.style.textShadow = 'none', 80);
+}, 3500);
 </script>
 </body>
 </html>
